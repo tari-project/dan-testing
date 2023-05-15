@@ -2,9 +2,8 @@
 from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT
 import base64
 import os
-import platform
 import requests
-import subprocess
+from subprocess_wrapper import SubprocessWrapper
 import signal
 import time
 from typing import Any
@@ -22,11 +21,14 @@ class JrpcDanWalletDaemon:
         headers = None
         if self.token:
             headers = {"Authorization": f"Bearer {self.token}"}
+        print(f"method {method} params {params}")
         response = requests.post(self.url, json={"jsonrpc": "2.0", "method": method, "id": self.id, "params": params}, headers=headers)
+        print(f"response {response}")
+        print(f"response.json {response.json()}")
         return response.json()["result"]
 
     def auth(self):
-        resp = self.call("auth.request", [["Admin"]])
+        resp = self.call("auth.request", [["Admin"], None])
         auth_token = resp["auth_token"]
         resp = self.call("auth.accept", [auth_token])
         self.token = resp["permissions_token"]
@@ -83,10 +85,7 @@ class DanWalletDaemon(CommonExec):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_dan_wallet_daemon.exe"]
-            else:
-                run = ["./tari_dan_wallet_daemon"]
+            run = ["./tari_dan_wallet_daemon"]
         else:
             run = ["cargo", "run", "--bin", "tari_dan_wallet_daemon", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
         self.exec = [
@@ -121,10 +120,7 @@ class DanWalletDaemon(CommonExec):
 class DanWalletUI(CommonExec):
     def __init__(self, dan_wallet_id, daemon_jrpc_address):
         super().__init__("dan_wallet_ui", dan_wallet_id)
-        if platform.system() == "Windows":
-            npm = "npm.cmd"
-        else:
-            npm = "npm"
+        npm = "npm.cmd"
         self.http_port = self.get_port("HTTP")
         self.exec = [npm, "--prefix", "../tari-dan/applications/tari_dan_wallet_web_ui", "run", "dev", "--", "--port", str(self.http_port)]
         self.daemon_jrpc_address = daemon_jrpc_address

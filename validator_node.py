@@ -2,12 +2,12 @@
 
 from ports import ports
 from config import NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE
+from subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
 import time
 import re
 import requests
-import platform
 from common_exec import CommonExec
 
 
@@ -39,10 +39,7 @@ class ValidatorNode(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"127.0.0.1:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_validator_node.exe"]
-            else:
-                run = ["./tari_validator_node"]
+            run = ["./tari_validator_node"]
         else:
             run = ["cargo", "run", "--bin", "tari_validator_node", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
         self.exec = [
@@ -75,19 +72,18 @@ class ValidatorNode(CommonExec):
             f"validator_node.no_fees={NO_FEES}",
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
-        # while not os.path.exists(f"vn_{node_id}/localnet/pid"):
-        #     print("Waiting for VN to start")
-        #     if self.process.poll() is None:
-        #         time.sleep(1)
-        #     else:
-        #         raise Exception(
-        #             f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+        while not os.path.exists(f"vn_{node_id}/localnet/pid"):
+            print("Waiting for VN to start")
+            if self.process.poll() is None:
+                time.sleep(1)
+            else:
+                raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
         self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
 
     def get_address(self):
         validator_node_id_file_name = f"./vn_{self.id}/{NETWORK}/validator_node_id.json"
         while not os.path.exists(validator_node_id_file_name):
-            time.sleep(0.3)
+            time.sleep(1)
         f = open(validator_node_id_file_name, "rt")
         content = "".join(f.readlines())
         node_id, public_key, public_address = re.search(
@@ -98,14 +94,13 @@ class ValidatorNode(CommonExec):
 
     def register(self):
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_validator_node_cli.exe"]
-            else:
-                run = ["./tari_validator_node_cli"]
+            run = ["./tari_validator_node_cli"]
         else:
             run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
         self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/127.0.0.1/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
-            self.cli_process = subprocess.call(self.exec_cli, stdout=open(f"stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT)
+            self.cli_process = SubprocessWrapper.call(
+                self.exec_cli, stdout=open(f"stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT
+            )
         else:
-            self.cli_process = subprocess.call(self.exec_cli)
+            self.cli_process = SubprocessWrapper.call(self.exec_cli)

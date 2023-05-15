@@ -13,7 +13,6 @@ from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE
 from typing import Any
 from common_exec import CommonExec
 import time
-import platform
 
 
 class GrpcWallet:
@@ -50,10 +49,7 @@ class Wallet(CommonExec):
         self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_console_wallet.exe"]
-            else:
-                run = ["./tari_console_wallet"]
+            run = ["./tari_console_wallet"]
         else:
             run = ["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", "../tari/Cargo.toml", "--"]
         self.exec = [
@@ -90,4 +86,4 @@ class Wallet(CommonExec):
                 break
             except:
                 pass
-            time.sleep(0.3)
+            time.sleep(1)

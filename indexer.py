@@ -4,10 +4,9 @@ from config import NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE
 from ports import ports
 import os
 import time
-import platform
 import re
 import requests
-import subprocess
+from subprocess_wrapper import SubprocessWrapper
 from common_exec import CommonExec
 
 
@@ -21,10 +20,7 @@ class Indexer(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"127.0.0.1:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_indexer.exe"]
-            else:
-                run = ["./tari_indexer"]
+            run = ["./tari_indexer"]
         else:
             run = [
                 "cargo",
@@ -60,12 +56,12 @@ class Indexer(CommonExec):
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
-        # while not os.path.exists(f"indexer/localnet/pid"):
-        #     print("Waiting for indexer to start")
-        #     if self.process.poll() is None:
-        #         time.sleep(1)
-        #     else:
-        #         raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+        while not os.path.exists(f"indexer/localnet/pid"):
+            print("Waiting for indexer to start")
+            if self.process.poll() is None:
+                time.sleep(1)
+            else:
+                raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
 
     def get_address(self):
         if NETWORK == "localnet":
@@ -73,7 +69,7 @@ class Indexer(CommonExec):
         else:
             indexer_id_file_name = f"./indexer/indexer_id_{NETWORK}.json"
         while not os.path.exists(indexer_id_file_name):
-            time.sleep(0.3)
+            time.sleep(1)
         f = open(indexer_id_file_name, "rt")
         content = "".join(f.readlines())
         node_id, public_key, public_address = re.search(

@@ -1,17 +1,14 @@
 # type:ignore
 
 from config import NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE
+from subprocess_wrapper import SubprocessWrapper
 import subprocess
-import platform
 
 
 class Miner:
     def __init__(self, base_node_grpc_port, wallet_grpc_port):
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_miner.exe"]
-            else:
-                run = ["./tari_miner"]
+            run = ["./tari_miner"]
         else:
             run = ["cargo", "run", "--bin", "tari_miner", "--manifest-path", "../tari/Cargo.toml", "--"]
         self.exec_template = [
@@ -34,6 +31,6 @@ class Miner:
         self.exec = list(self.exec_template)
         self.exec[self.exec.index("#blocks")] = str(blocks)
         if REDIRECT_MINER_STDOUT:
-            self.process = subprocess.call(self.exec, stdout=open("stdout/miner.log", "a+"), stderr=subprocess.STDOUT)
+            self.process = SubprocessWrapper.call(self.exec, stdout=open("stdout/miner.log", "a+"), stderr=subprocess.STDOUT)
         else:
-            self.process = subprocess.call(self.exec)
+            self.process = SubprocessWrapper.call(self.exec)

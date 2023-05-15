@@ -5,11 +5,11 @@ from config import DEFAULT_TEMPLATE, REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_S
 from ports import ports
 from dan_wallet_daemon import JrpcDanWalletDaemon
 from typing import Any
-import subprocess
+from subprocess_wrapper import SubprocessWrapper
 import re
 import os
 import array
-import platform
+import subprocess
 
 
 class Template:
@@ -28,28 +28,27 @@ class Template:
         exec = ["cargo", "generate", "--git", "https://github.com/tari-project/wasm-template.git", "-s", self.template, "-n", self.name]
         print(exec)
         if REDIRECT_TEMPLATE_STDOUT:
-            subprocess.call(
+            SubprocessWrapper.call(
                 exec, stdout=open(f"./stdout/template_{self.name}_cargo_generate.log", "a+"), stderr=subprocess.STDOUT, cwd="./templates"
             )
         else:
-            subprocess.call(exec, cwd="./templates")
+            SubprocessWrapper.call(exec, cwd="./templates")
 
     def compile(self):
         wd = os.getcwd()
         os.chdir(f"templates/{self.name}/package")
         exec = ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"]
         if REDIRECT_TEMPLATE_STDOUT:
-            subprocess.call(exec, stdout=open(f"../../../stdout/template_{self.name}_cargo_build.log", "a+"), stderr=subprocess.STDOUT)
+            SubprocessWrapper.call(
+                exec, stdout=open(f"../../../stdout/template_{self.name}_cargo_build.log", "a+"), stderr=subprocess.STDOUT
+            )
         else:
-            subprocess.call(exec)
+            SubprocessWrapper.call(exec)
         os.chdir(wd)
 
     def publish_template(self, jrpc_port: int, server_port: int):
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_validator_node_cli.exe"]
-            else:
-                run = ["./tari_validator_node_cli"]
+            run = ["./tari_validator_node_cli"]
         else:
             run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
 
@@ -70,7 +69,7 @@ class Template:
             "--template-type",
             "wasm",
         ]
-        result = subprocess.run(exec, stdout=subprocess.PIPE)
+        result = SubprocessWrapper.run(exec, stdout=subprocess.PIPE)
         if r := re.search(r"The template address will be ([0-9a-f]{64})", result.stdout.decode()):
             self.id = r.group(1)
         else:

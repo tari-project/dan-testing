@@ -14,7 +14,6 @@ import os
 import re
 import time
 from common_exec import CommonExec
-import platform
 
 
 class GrpcBaseNode:
@@ -59,10 +58,7 @@ class BaseNode(CommonExec):
         self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            if platform.system() == "Windows":
-                run = ["./tari_base_node.exe"]
-            else:
-                run = ["./tari_base_node"]
+            run = ["./tari_base_node"]
         else:
             run = ["cargo", "run", "--bin", "tari_base_node", "--manifest-path", "../tari/Cargo.toml", "--"]
         self.exec = [
@@ -98,12 +94,12 @@ class BaseNode(CommonExec):
                 break
             except:
                 pass
-            time.sleep(0.3)
+            time.sleep(1)
 
     def get_address(self):
         base_node_id_file_name = f"./base_node/{NETWORK}/config/base_node_id.json"
         while not os.path.exists(base_node_id_file_name):
-            time.sleep(0.3)
+            time.sleep(1)
         f = open(base_node_id_file_name, "rt")
         content = "".join(f.readlines())
         node_id, public_key, public_address = re.search(
