@@ -7,6 +7,7 @@ import os
 import time
 import re
 import requests
+import platform
 from common_exec import CommonExec
 
 
@@ -38,40 +39,41 @@ class ValidatorNode(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"127.0.0.1:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = "tari_validator_node"
+            if platform.system() == "Windows":
+                run = ["./tari_validator_node.exe"]
+            else:
+                run = ["./tari_validator_node"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_validator_node", "--manifest-path", "../tari-dan/Cargo.toml", "--"])
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                f"vn_{node_id}",
-                "--network",
-                NETWORK,
-                "-p",
-                f"validator_node.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
-                "-p",
-                f"validator_node.wallet_grpc_address=127.0.0.1:{wallet_grpc_port}",
-                "-p",
-                "validator_node.p2p.transport.type=tcp",
-                "-p",
-                f"validator_node.p2p.transport.tcp.listener_address={self.public_adress}",
-                "-p",
-                "validator_node.p2p.allow_test_addresses=true",
-                "-p",
-                f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
-                # "-p",
-                # f"validator_node.p2p.public_address={self.public_adress}",
-                "-p",
-                f"validator_node.public_address={self.public_adress}",
-                "-p",
-                f"validator_node.json_rpc_address={self.json_rpc_address}",
-                "-p",
-                f"validator_node.http_ui_address={self.http_ui_address}",
-                "-p",
-                f"validator_node.no_fees={NO_FEES}",
-            ]
-        )
+            run = ["cargo", "run", "--bin", "tari_validator_node", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+        self.exec = [
+            *run,
+            "-b",
+            f"vn_{node_id}",
+            "--network",
+            NETWORK,
+            "-p",
+            f"validator_node.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
+            "-p",
+            f"validator_node.wallet_grpc_address=127.0.0.1:{wallet_grpc_port}",
+            "-p",
+            "validator_node.p2p.transport.type=tcp",
+            "-p",
+            f"validator_node.p2p.transport.tcp.listener_address={self.public_adress}",
+            "-p",
+            "validator_node.p2p.allow_test_addresses=true",
+            "-p",
+            f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
+            # "-p",
+            # f"validator_node.p2p.public_address={self.public_adress}",
+            "-p",
+            f"validator_node.public_address={self.public_adress}",
+            "-p",
+            f"validator_node.json_rpc_address={self.json_rpc_address}",
+            "-p",
+            f"validator_node.http_ui_address={self.http_ui_address}",
+            "-p",
+            f"validator_node.no_fees={NO_FEES}",
+        ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
         # while not os.path.exists(f"vn_{node_id}/localnet/pid"):
         #     print("Waiting for VN to start")
@@ -96,10 +98,13 @@ class ValidatorNode(CommonExec):
 
     def register(self):
         if USE_BINARY_EXECUTABLE:
-            run = "tari_validator_node_cli"
+            if platform.system() == "Windows":
+                run = ["./tari_validator_node_cli.exe"]
+            else:
+                run = ["./tari_validator_node_cli"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"])
-        self.exec_cli = " ".join([run, "--vn-daemon-jrpc-endpoint", f"/ip4/127.0.0.1/tcp/{self.json_rpc_port}", "vn", "register"])
+            run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+        self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/127.0.0.1/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = subprocess.call(self.exec_cli, stdout=open(f"stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT)
         else:

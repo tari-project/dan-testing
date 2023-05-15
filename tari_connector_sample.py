@@ -19,7 +19,7 @@ class TariConnectorSample(CommonExec):
 
         # first do npm install in tari-connector repo
         self.process = subprocess.call(
-            f"{npm} install",
+            [npm, "install"],
             stdin=subprocess.PIPE,
             stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
@@ -28,7 +28,7 @@ class TariConnectorSample(CommonExec):
 
         # create tari-connector link
         self.process = subprocess.call(
-            f"{npm} link",
+            [npm, "link"],
             stdin=subprocess.PIPE,
             stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
@@ -36,7 +36,7 @@ class TariConnectorSample(CommonExec):
         )
         # install everything
         self.process = subprocess.call(
-            f"{npm} install",
+            [npm, "install"],
             stdin=subprocess.PIPE,
             stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
@@ -44,14 +44,14 @@ class TariConnectorSample(CommonExec):
         )
         # link tari-connector package
         self.process = subprocess.call(
-            f"{npm} link tari-connector",
+            [npm, "link", "tari-connector"],
             stdin=subprocess.PIPE,
             stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
             cwd="../tari-connector/examples/material-vite-ts",
         )
         # run the project
-        self.exec = " ".join([npm, "run", "dev", "--", "--port", str(self.http_port)])
+        self.exec = [npm, "run", "dev", "--", "--port", str(self.http_port)]
         self.env["VITE_SIGNALING_SERVER_ADDRESS"] = signaling_server_address
         self.run(
             REDIRECT_DAN_WALLET_WEBUI_STDOUT,

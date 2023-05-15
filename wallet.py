@@ -13,6 +13,8 @@ from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE
 from typing import Any
 from common_exec import CommonExec
 import time
+import platform
+
 
 class GrpcWallet:
     def __init__(self, grpc_url):
@@ -48,36 +50,37 @@ class Wallet(CommonExec):
         self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = "tari_console_wallet"
+            if platform.system() == "Windows":
+                run = ["./tari_console_wallet.exe"]
+            else:
+                run = ["./tari_console_wallet"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", "../tari/Cargo.toml", "--"])
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                "wallet",
-                "-n",
-                "--network",
-                NETWORK,
-                "--enable-grpc",
-                "--password",
-                "a",
-                "-p",
-                "wallet.p2p.transport.type=tcp",
-                "-p",
-                f"wallet.custom_base_node={base_node_address}",
-                "-p",
-                f"wallet.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
-                "-p",
-                f"wallet.p2p.transport.tcp.listener_address={self.public_address}",
-                "-p",
-                f"wallet.p2p.public_addresses={self.public_address}",
-                "-p",
-                "wallet.p2p.allow_test_addresses=true",
-                "-p",
-                f'{NETWORK}.p2p.seeds.peer_seeds=""',
-            ]
-        )
+            run = ["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", "../tari/Cargo.toml", "--"]
+        self.exec = [
+            *run,
+            "-b",
+            "wallet",
+            "-n",
+            "--network",
+            NETWORK,
+            "--enable-grpc",
+            "--password",
+            "a",
+            "-p",
+            "wallet.p2p.transport.type=tcp",
+            "-p",
+            f"wallet.custom_base_node={base_node_address}",
+            "-p",
+            f"wallet.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
+            "-p",
+            f"wallet.p2p.transport.tcp.listener_address={self.public_address}",
+            "-p",
+            f"wallet.p2p.public_addresses={self.public_address}",
+            "-p",
+            "wallet.p2p.allow_test_addresses=true",
+            "-p",
+            f'{NETWORK}.p2p.seeds.peer_seeds=""',
+        ]
         self.run(REDIRECT_WALLET_STDOUT)
         # Sometimes it takes a while to establish the grpc connection
         while True:

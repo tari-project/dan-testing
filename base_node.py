@@ -14,6 +14,7 @@ import os
 import re
 import time
 from common_exec import CommonExec
+import platform
 
 
 class GrpcBaseNode:
@@ -58,35 +59,36 @@ class BaseNode(CommonExec):
         self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = "tari_base_node"
+            if platform.system() == "Windows":
+                run = ["./tari_base_node.exe"]
+            else:
+                run = ["./tari_base_node"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_base_node", "--manifest-path", "../tari/Cargo.toml", "--"])
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                "base_node",
-                "-n",
-                "--network",
-                NETWORK,
-                "-p",
-                "base_node.p2p.transport.type=tcp",
-                "-p",
-                f"base_node.p2p.transport.tcp.listener_address={self.public_address}",
-                "-p",
-                f"base_node.p2p.public_addresses={self.public_address}",
-                "-p",
-                f"base_node.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
-                "-p",
-                f"base_node.grpc_enabled=true",
-                "-p",
-                "base_node.p2p.allow_test_addresses=true",
-                "-p",
-                f'{NETWORK}.p2p.seeds.peer_seeds=""',
-                "-p",
-                "base_node.metadata_auto_ping_interval=3",
-            ]
-        )
+            run = ["cargo", "run", "--bin", "tari_base_node", "--manifest-path", "../tari/Cargo.toml", "--"]
+        self.exec = [
+            *run,
+            "-b",
+            "base_node",
+            "-n",
+            "--network",
+            NETWORK,
+            "-p",
+            "base_node.p2p.transport.type=tcp",
+            "-p",
+            f"base_node.p2p.transport.tcp.listener_address={self.public_address}",
+            "-p",
+            f"base_node.p2p.public_addresses={self.public_address}",
+            "-p",
+            f"base_node.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
+            "-p",
+            f"base_node.grpc_enabled=true",
+            "-p",
+            "base_node.p2p.allow_test_addresses=true",
+            "-p",
+            f'{NETWORK}.p2p.seeds.peer_seeds=""',
+            "-p",
+            "base_node.metadata_auto_ping_interval=3",
+        ]
         self.run(REDIRECT_BASE_NODE_STDOUT)
         # Sometimes it takes a while to establish the grpc connection
         while True:

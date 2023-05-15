@@ -83,24 +83,25 @@ class DanWalletDaemon(CommonExec):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
         if USE_BINARY_EXECUTABLE:
-            run = "tari_dan_wallet_daemon"
+            if platform.system() == "Windows":
+                run = ["./tari_dan_wallet_daemon.exe"]
+            else:
+                run = ["./tari_dan_wallet_daemon"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_dan_wallet_daemon", "--manifest-path", "../tari-dan/Cargo.toml", "--"])
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                f"dan_wallet_daemon_{dan_wallet_id}",
-                "--network",
-                "localnet",
-                "--listen-addr",
-                f"127.0.0.1:{self.json_rpc_port}",
-                "--indexer_url",
-                f"http://127.0.0.1:{indexer_jrpc_port}/json_rpc",
-            ]
-        )
+            run = ["cargo", "run", "--bin", "tari_dan_wallet_daemon", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+        self.exec = [
+            *run,
+            "-b",
+            f"dan_wallet_daemon_{dan_wallet_id}",
+            "--network",
+            "localnet",
+            "--listen-addr",
+            f"127.0.0.1:{self.json_rpc_port}",
+            "--indexer_url",
+            f"http://127.0.0.1:{indexer_jrpc_port}/json_rpc",
+        ]
         if signaling_server_port:
-            self.exec = " ".join([self.exec, "--signaling_server_address", f"127.0.0.1:{signaling_server_port}"])
+            self.exec = [*self.exec, "--signaling_server_address", f"127.0.0.1:{signaling_server_port}"]
         self.run(REDIRECT_DAN_WALLET_STDOUT)
 
         # (out, err) = self.process.communicate()
@@ -125,9 +126,7 @@ class DanWalletUI(CommonExec):
         else:
             npm = "npm"
         self.http_port = self.get_port("HTTP")
-        self.exec = " ".join(
-            [npm, "--prefix", "../tari-dan/applications/tari_dan_wallet_web_ui", "run", "dev", "--", "--port", str(self.http_port)]
-        )
+        self.exec = [npm, "--prefix", "../tari-dan/applications/tari_dan_wallet_web_ui", "run", "dev", "--", "--port", str(self.http_port)]
         self.daemon_jrpc_address = daemon_jrpc_address
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = daemon_jrpc_address
         self.run(REDIRECT_DAN_WALLET_WEBUI_STDOUT)

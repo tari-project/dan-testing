@@ -4,6 +4,7 @@ from config import NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE
 from ports import ports
 import os
 import time
+import platform
 import re
 import requests
 import subprocess
@@ -20,44 +21,43 @@ class Indexer(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"127.0.0.1:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = "tari_indexer"
+            if platform.system() == "Windows":
+                run = ["./tari_indexer.exe"]
+            else:
+                run = ["./tari_indexer"]
         else:
-            run = " ".join(
-                [
-                    "cargo",
-                    "run",
-                    "--bin",
-                    "tari_indexer",
-                    "--manifest-path",
-                    "../tari-dan/Cargo.toml",
-                    "--",
-                ]
-            )
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                f"indexer",
-                "--network",
-                NETWORK,
-                "-p",
-                f"indexer.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
-                "-p",
-                "indexer.p2p.transport.type=tcp",
-                "-p",
-                f"indexer.p2p.transport.tcp.listener_address={self.public_adress}",
-                "-p",
-                "indexer.p2p.allow_test_addresses=true",
-                "-p",
-                f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
-                # "-p",
-                # f"indexer.p2p.public_addresses={self.public_adress}",
-                "-p",
-                f"indexer.json_rpc_address={self.json_rpc_address}",
-                "-p",
-                f"indexer.http_ui_address={self.http_ui_address}",
+            run = [
+                "cargo",
+                "run",
+                "--bin",
+                "tari_indexer",
+                "--manifest-path",
+                "../tari-dan/Cargo.toml",
+                "--",
             ]
-        )
+        self.exec = [
+            *run,
+            "-b",
+            f"indexer",
+            "--network",
+            NETWORK,
+            "-p",
+            f"indexer.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
+            "-p",
+            "indexer.p2p.transport.type=tcp",
+            "-p",
+            f"indexer.p2p.transport.tcp.listener_address={self.public_adress}",
+            "-p",
+            "indexer.p2p.allow_test_addresses=true",
+            "-p",
+            f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
+            "-p",
+            f"indexer.p2p.public_addresses={self.public_adress}",
+            "-p",
+            f"indexer.json_rpc_address={self.json_rpc_address}",
+            "-p",
+            f"indexer.http_ui_address={self.http_ui_address}",
+        ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
         # while not os.path.exists(f"indexer/localnet/pid"):
