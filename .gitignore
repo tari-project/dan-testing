@@ -1,0 +1,16 @@
+__pycache__
+.vscode
+base_node
+counter
+dan_wallet_daemon*/
+indexer
+log
+miner
+protos/*
+!protos/__init__.py
+signaling_server
+stdout
+templates
+vn*
+wallet
+*.exe
