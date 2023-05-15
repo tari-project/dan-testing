@@ -12,7 +12,7 @@ except:
 from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE
 from typing import Any
 from common_exec import CommonExec
-
+import time
 
 class GrpcWallet:
     def __init__(self, grpc_url):
