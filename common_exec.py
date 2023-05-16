@@ -1,5 +1,6 @@
 import os
 import signal
+from subprocess_wrapper import SubprocessWrapper
 import subprocess
 from ports import ports
 from typing import Optional, Any
@@ -23,7 +24,7 @@ class CommonExec:
     def run(self, redirect: bool | int, cwd: Optional[str] = None):
         env: dict[str, str] = os.environ.copy()
         if (self.id is not None and self.id >= redirect) or (not self.id and redirect):
-            self.process = subprocess.Popen(
+            self.process = SubprocessWrapper.Popen(
                 self.exec,
                 stdin=subprocess.PIPE,
                 stdout=open(f"stdout/{self.name}.log", "a+"),
@@ -32,11 +33,11 @@ class CommonExec:
                 cwd=cwd,
             )
         else:
-            self.process = subprocess.Popen(self.exec, stdin=subprocess.PIPE, env={**env, **self.env}, cwd=cwd)
+            self.process = SubprocessWrapper.Popen(self.exec, stdin=subprocess.PIPE, env={**env, **self.env}, cwd=cwd)
 
     def __del__(self):
         print(f"kill {NAME_COLOR}{self.name}{COLOR_RESET}")
-        print(f"To run {EXEC_COLOR}{self.exec}{COLOR_RESET}", end=" ")
+        print(f"To run {EXEC_COLOR}{' '.join(self.exec)}{COLOR_RESET}", end=" ")
         if self.env:
             print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
         print()

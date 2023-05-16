@@ -6,7 +6,7 @@ import os
 import time
 import re
 import requests
-import subprocess
+from subprocess_wrapper import SubprocessWrapper
 from common_exec import CommonExec
 
 
@@ -20,52 +20,48 @@ class Indexer(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"127.0.0.1:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = "tari_indexer"
+            run = ["./tari_indexer"]
         else:
-            run = " ".join(
-                [
-                    "cargo",
-                    "run",
-                    "--bin",
-                    "tari_indexer",
-                    "--manifest-path",
-                    "../tari-dan/Cargo.toml",
-                    "--",
-                ]
-            )
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                f"indexer",
-                "--network",
-                NETWORK,
-                "-p",
-                f"indexer.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
-                "-p",
-                "indexer.p2p.transport.type=tcp",
-                "-p",
-                f"indexer.p2p.transport.tcp.listener_address={self.public_adress}",
-                "-p",
-                "indexer.p2p.allow_test_addresses=true",
-                "-p",
-                f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
-                # "-p",
-                # f"indexer.p2p.public_addresses={self.public_adress}",
-                "-p",
-                f"indexer.json_rpc_address={self.json_rpc_address}",
-                "-p",
-                f"indexer.http_ui_address={self.http_ui_address}",
+            run = [
+                "cargo",
+                "run",
+                "--bin",
+                "tari_indexer",
+                "--manifest-path",
+                "../tari-dan/Cargo.toml",
+                "--",
             ]
-        )
+        self.exec = [
+            *run,
+            "-b",
+            f"indexer",
+            "--network",
+            NETWORK,
+            "-p",
+            f"indexer.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
+            "-p",
+            "indexer.p2p.transport.type=tcp",
+            "-p",
+            f"indexer.p2p.transport.tcp.listener_address={self.public_adress}",
+            "-p",
+            "indexer.p2p.allow_test_addresses=true",
+            "-p",
+            f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
+            "-p",
+            f"indexer.p2p.public_addresses={self.public_adress}",
+            "-p",
+            f"indexer.json_rpc_address={self.json_rpc_address}",
+            "-p",
+            f"indexer.http_ui_address={self.http_ui_address}",
+        ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
-        # while not os.path.exists(f"indexer/localnet/pid"):
-        #     print("Waiting for indexer to start")
-        #     if self.process.poll() is None:
-        #         time.sleep(1)
-        #     else:
-        #         raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+        while not os.path.exists(f"indexer/localnet/pid"):
+            print("Waiting for indexer to start")
+            if self.process.poll() is None:
+                time.sleep(1)
+            else:
+                raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
 
     def get_address(self):
         if NETWORK == "localnet":
@@ -73,7 +69,7 @@ class Indexer(CommonExec):
         else:
             indexer_id_file_name = f"./indexer/indexer_id_{NETWORK}.json"
         while not os.path.exists(indexer_id_file_name):
-            time.sleep(0.3)
+            time.sleep(1)
         f = open(indexer_id_file_name, "rt")
         content = "".join(f.readlines())
         node_id, public_key, public_address = re.search(

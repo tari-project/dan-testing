@@ -58,35 +58,33 @@ class BaseNode(CommonExec):
         self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = "tari_base_node"
+            run = ["./tari_base_node"]
         else:
-            run = " ".join(["cargo", "run", "--bin", "tari_base_node", "--manifest-path", "../tari/Cargo.toml", "--"])
-        self.exec = " ".join(
-            [
-                run,
-                "-b",
-                "base_node",
-                "-n",
-                "--network",
-                NETWORK,
-                "-p",
-                "base_node.p2p.transport.type=tcp",
-                "-p",
-                f"base_node.p2p.transport.tcp.listener_address={self.public_address}",
-                "-p",
-                f"base_node.p2p.public_addresses={self.public_address}",
-                "-p",
-                f"base_node.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
-                "-p",
-                f"base_node.grpc_enabled=true",
-                "-p",
-                "base_node.p2p.allow_test_addresses=true",
-                "-p",
-                f'{NETWORK}.p2p.seeds.peer_seeds=""',
-                "-p",
-                "base_node.metadata_auto_ping_interval=3",
-            ]
-        )
+            run = ["cargo", "run", "--bin", "tari_base_node", "--manifest-path", "../tari/Cargo.toml", "--"]
+        self.exec = [
+            *run,
+            "-b",
+            "base_node",
+            "-n",
+            "--network",
+            NETWORK,
+            "-p",
+            "base_node.p2p.transport.type=tcp",
+            "-p",
+            f"base_node.p2p.transport.tcp.listener_address={self.public_address}",
+            "-p",
+            f"base_node.p2p.public_addresses={self.public_address}",
+            "-p",
+            f"base_node.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
+            "-p",
+            f"base_node.grpc_enabled=true",
+            "-p",
+            "base_node.p2p.allow_test_addresses=true",
+            "-p",
+            f'{NETWORK}.p2p.seeds.peer_seeds=""',
+            "-p",
+            "base_node.metadata_auto_ping_interval=3",
+        ]
         self.run(REDIRECT_BASE_NODE_STDOUT)
         # Sometimes it takes a while to establish the grpc connection
         while True:
@@ -96,12 +94,12 @@ class BaseNode(CommonExec):
                 break
             except:
                 pass
-            time.sleep(0.3)
+            time.sleep(1)
 
     def get_address(self):
         base_node_id_file_name = f"./base_node/{NETWORK}/config/base_node_id.json"
         while not os.path.exists(base_node_id_file_name):
-            time.sleep(0.3)
+            time.sleep(1)
         f = open(base_node_id_file_name, "rt")
         content = "".join(f.readlines())
         node_id, public_key, public_address = re.search(
