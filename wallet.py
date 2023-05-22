@@ -34,11 +34,7 @@ class GrpcWallet:
         return self.stub.GetBalance(request)
 
     def burn(self, amount: int, claim_public_key: bytes, fee_per_gram: int = 5) -> Any:
-        print("amount", amount, type(amount))
-        print("claim_public_key", claim_public_key, type(claim_public_key))
-        print("fee_per_gram", fee_per_gram, type(fee_per_gram))
         request = wallet_pb2.CreateBurnTransactionRequest(amount=amount, fee_per_gram=fee_per_gram, claim_public_key=claim_public_key)
-        print(request)
         return self.stub.CreateBurnTransaction(request)
 
 

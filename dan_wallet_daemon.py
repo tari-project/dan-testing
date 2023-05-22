@@ -3,8 +3,6 @@ from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_D
 import base64
 import os
 import requests
-from subprocess_wrapper import SubprocessWrapper
-import signal
 import time
 from typing import Any
 from common_exec import CommonExec
@@ -21,10 +19,7 @@ class JrpcDanWalletDaemon:
         headers = None
         if self.token:
             headers = {"Authorization": f"Bearer {self.token}"}
-        print(f"method {method} params {params}")
         response = requests.post(self.url, json={"jsonrpc": "2.0", "method": method, "id": self.id, "params": params}, headers=headers)
-        print(f"response {response}")
-        print(f"response.json {response.json()}")
         return response.json()["result"]
 
     def auth(self):
@@ -79,6 +74,14 @@ class JrpcDanWalletDaemon:
     def get_balances(self, account: Any):
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
+    def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
+        return self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+
+    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
+        return self.call(
+            "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
+        )
+
 
 class DanWalletDaemon(CommonExec):
     def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int):
@@ -107,7 +110,7 @@ class DanWalletDaemon(CommonExec):
         jrpc_address = f"http://127.0.0.1:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
         self.http_client = DanWalletUI(self.id, jrpc_address)
-        print("Waiting for dan wallet to start", end="")
+        print("Waiting for dan wallet to start.", end="")
         while not os.path.exists(f"dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
             print(".", end="")
             if self.process.poll() is None:

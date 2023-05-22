@@ -16,7 +16,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         file_path = self.path[1:]
-        print(file_path)
         if os.path.isfile(file_path):
             self._send_response(file_path)
         else:

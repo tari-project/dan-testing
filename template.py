@@ -26,7 +26,6 @@ class Template:
             pass
 
         exec = ["cargo", "generate", "--git", "https://github.com/tari-project/wasm-template.git", "-s", self.template, "-n", self.name]
-        print(exec)
         if REDIRECT_TEMPLATE_STDOUT:
             SubprocessWrapper.call(
                 exec, stdout=open(f"./stdout/template_{self.name}_cargo_generate.log", "a+"), stderr=subprocess.STDOUT, cwd="./templates"

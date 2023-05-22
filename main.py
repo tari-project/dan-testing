@@ -48,7 +48,7 @@ def check_executable(file_name: str):
 
 
 def wait_for_vns_to_sync():
-    print("Waiting for VNs to sync to", base_node.grpc_client.get_tip(), end="")
+    print("Waiting for VNs to sync to", base_node.grpc_client.get_tip(), end=".")
     # We have to check if VNs are already running their jrpc server
     while True:
         print(".", end="")
@@ -60,7 +60,6 @@ def wait_for_vns_to_sync():
             break
         except:
             time.sleep(1)
-    print()
     while any(
         vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] != base_node.grpc_client.get_tip() - 3
         for vn in validator_nodes.values()
@@ -111,7 +110,7 @@ try:
     # Set ports for miner
     miner = Miner(base_node.grpc_port, wallet.grpc_port)
     # Mine some blocks
-    miner.mine(SPAWN_VNS + 13)  # Make sure we have enough funds
+    miner.mine((SPAWN_VNS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
     # Start VNs
     print_step("CREATING VNS")
     validator_nodes: dict[int, ValidatorNode] = {}
@@ -132,11 +131,11 @@ try:
 
         # Wait until they are all in the mempool
     i = 0
-    print("Waiting for X tx's in mempool", end="")
+    print("Waiting for X tx's in mempool.", end="")
     while i < 10:
         if base_node.grpc_client.get_mempool_size() < len(validator_nodes) + 1:
             print(".", end="")
-            time.sleep(3)
+            time.sleep(1)
         else:
             break
         i += 1
@@ -181,13 +180,14 @@ try:
     wait_for_vns_to_sync()
 
     for d_id in range(SPAWN_WALLETS):
-        print(f"Waiting for Dan{d_id} JRPC", end="")
+        print(f"Waiting for Dan{d_id} JRPC.", end="")
         while True:
             try:
                 dan_wallets[d_id].jrpc_client.auth()
                 break
             except:
                 print(".", end="")
+            time.sleep(1)
         print("done")
 
     # Publish template
@@ -199,39 +199,59 @@ try:
     wait_for_vns_to_sync()
 
     if STEPS_CREATE_ACCOUNT:
-        print_step("CREATING ACCOUNT")
-        some_dan_wallet_jrpc = next(iter(dan_wallets.values())).jrpc_client
-        some_dan_wallet_jrpc.accounts_create("TestAccount")
-        account = some_dan_wallet_jrpc.accounts_list(0, 1)["accounts"][0]
-        public_key = account["public_key"]
-
-        # needs conversion from string to bytes
-        # public_key = bytes(int(public_key[i: i + 2], 16)
-        #                    for i in range(0, len(public_key), 2))
+        print_step("CREATING ACCOUNTS")
+        for id in dan_wallets:
+            dan_wallet_jrpc = dan_wallets[id].jrpc_client
+            # some_dan_wallet_jrpc = next(iter(dan_wallets.values())).jrpc_client
+            dan_wallet_jrpc.accounts_create(f"TestAccount_{id}")
+            del dan_wallet_jrpc
+        burns = {}
+        accounts = {}
         print_step(f"BURNING {BURN_AMOUNT}")
-
-        burn = wallet.grpc_client.burn(BURN_AMOUNT, bytes.fromhex(public_key))
-
+        for id in dan_wallets:
+            dan_wallet_jrpc = dan_wallets[id].jrpc_client
+            account = dan_wallet_jrpc.accounts_list(0, 1)["accounts"][0]
+            accounts[id] = account
+            public_key = account["public_key"]
+            burns[id] = wallet.grpc_client.burn(BURN_AMOUNT, bytes.fromhex(public_key))
+            del dan_wallet_jrpc
+            del public_key
+            del account
         # Wait for the burn to be in the mempool
-        while base_node.grpc_client.get_mempool_size() != 1:
-            time.sleep(0.5)
-        miner.mine(4)  # Mine the burn
-        # Mine the burn
-        wait_for_vns_to_sync()
-
-        print_step("CLAIM BURN")
-        some_dan_wallet_jrpc.claim_burn(burn, account)
-        print_step("CHECKING THE BALANCE")
-        # Claim the burn
-        while (
-            some_dan_wallet_jrpc.get_balances(account)["balances"][0]["balance"]
-            + some_dan_wallet_jrpc.get_balances(account)["balances"][0]["confidential_balance"]
-            == 0
-        ):
+        print("Waiting for all burns to be in mempool.", end="")
+        while base_node.grpc_client.get_mempool_size() != len(dan_wallets):
+            print(".", end="")
             time.sleep(1)
+        miner.mine(4)  # Mine the burns
+        print("done")
+        print("Wait until they are all mined.", end="")
+        while base_node.grpc_client.get_mempool_size() != 0:
+            print(".", end="")
+            miner.mine(1)  # Mine the burns
+            time.sleep(1)
+        print("done")
+        miner.mine(3)  # mine 3 more blocks to have confirmation
+        wait_for_vns_to_sync()
+        time.sleep(10)
+        print_step("CLAIM BURN")
+        for id in dan_wallets:
+            dan_wallet_jrpc = dan_wallets[id].jrpc_client
+            dan_wallet_jrpc.claim_burn(burns[id], accounts[id])
+            del dan_wallet_jrpc
+        print_step("CHECKING THE BALANCE")
+        for id in dan_wallets:
+            # Claim the burn
+            for id in dan_wallets:
+                dan_wallet_jrpc = dan_wallets[id].jrpc_client
+                while (
+                    dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["balance"]
+                    + dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["confidential_balance"]
+                    == 0
+                ):
+                    time.sleep(1)
+                del dan_wallet_jrpc
 
         print_step("BURNED AND CLAIMED")
-        print("Balances:", list(dan_wallets.values())[0].jrpc_client.get_balances(account))
 
     if STEPS_CREATE_TEMPLATE:
         print_step("Creating template")
@@ -322,11 +342,11 @@ try:
                             print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
                 elif command.startswith("jrpc dan"):
                     if r := re.match(r"jrpc dan (\d+)", command):
-                        vn_id = int(r.group(1))
-                        if vn_id in validator_nodes:
-                            print(dan_wallets[vn_id].json_rpc_port)
+                        dan_id = int(r.group(1))
+                        if dan_id in dan_wallets:
+                            print(dan_wallets[dan_id].json_rpc_port)
                         else:
-                            print(f"dan id ({vn_id}) is invalid, either it never existed or you already killed it")
+                            print(f"dan id ({dan_id}) is invalid, either it never existed or you already killed it")
                 elif command.startswith("jrpc indexer"):
                     if indexer:
                         print(indexer.json_rpc_port)
@@ -368,30 +388,27 @@ try:
                     match what:
                         case "node":
                             if base_node:
-                                print(f'To run base node : {base_node.exec.replace("-n ", "")}')
+                                print(f'To run base node : {" ".join(base_node.exec).replace("-n ", "")}')
                                 del base_node
                         case "wallet":
                             if wallet:
-                                print(f'To run the wallet : {wallet.exec.replace("-n ", "")}')
+                                print(f'To run the wallet : {" ".join(wallet.exec).replace("-n ", "")}')
                                 del wallet
                         case "indexer":
                             if indexer:
-                                print(f'To run the indexer : {indexer.exec.replace("-n ", "")}')
+                                print(f'To run the indexer : {" ".join(indexer.exec).replace("-n ", "")}')
                                 del indexer
                         case _:
                             # This should be 'VN <id>'
                             if r := re.match(r"vn (\d+)", what):
                                 vn_id = int(r.group(1))
                                 if vn_id in validator_nodes:
-                                    print(f"To run the vn : {validator_nodes[vn_id].exec}")
-                                    print(f"Command that was used to register the VN : {validator_nodes[vn_id].exec_cli}")
                                     del validator_nodes[vn_id]
                                 else:
                                     print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
-                            elif r := re.match("dan (\d+)", what):
+                            elif r := re.match(r"dan (\d+)", what):
                                 dan_id = int(r.group(1))
                                 if dan_id in dan_wallets:
-                                    print(f"To run the vn : {dan_wallets[dan_id].exec}")
                                     del dan_wallets[dan_id]
                                 else:
                                     print(f"DanWallet id ({dan_id}) is invalid, either it never existed or you already killed it")

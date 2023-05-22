@@ -72,12 +72,14 @@ class ValidatorNode(CommonExec):
             f"validator_node.no_fees={NO_FEES}",
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
+        print("Waiting for VN to start.", end="")
         while not os.path.exists(f"vn_{node_id}/localnet/pid"):
-            print("Waiting for VN to start")
+            print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+        print("done")
         self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
 
     def get_address(self):

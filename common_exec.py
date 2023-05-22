@@ -5,6 +5,18 @@ import subprocess
 from ports import ports
 from typing import Optional, Any
 from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR
+import psutil
+
+
+def kill_process_tree(pid: int):
+    try:
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        for child in children:
+            child.send_signal(signal.SIGTERM)
+        parent.send_signal(signal.SIGTERM)
+    except psutil.NoSuchProcess:
+        pass
 
 
 class CommonExec:
@@ -36,17 +48,17 @@ class CommonExec:
             self.process = SubprocessWrapper.Popen(self.exec, stdin=subprocess.PIPE, env={**env, **self.env}, cwd=cwd)
 
     def __del__(self):
-        print(f"kill {NAME_COLOR}{self.name}{COLOR_RESET}")
+        print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
         print(f"To run {EXEC_COLOR}{' '.join(self.exec)}{COLOR_RESET}", end=" ")
         if self.env:
             print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
         print()
         if self.process:
             try:
-                os.kill(self.process.pid, signal.CTRL_C_EVENT)
-                print("killed")
+                self.process.send_signal(signal.CTRL_C_EVENT)
             except:
                 pass
+            kill_process_tree(self.process.pid)
             if self.process:
                 self.process.kill()
             del self.process

@@ -5,7 +5,7 @@ from typing import Any
 
 
 class SubprocessWrapper:
-    def call(*args, **kwargs) -> int:
+    def call(*args: Any, **kwargs: Any) -> int:
         if type(args[0]) == list and platform.system() == "Windows":
             if args[0][0].startswith("./tari"):
                 args[0][0] += ".exe"
@@ -15,7 +15,7 @@ class SubprocessWrapper:
         else:
             return subprocess.call(*args, **kwargs)
 
-    def Popen(*args, **kwargs) -> subprocess.Popen[Any]:
+    def Popen(*args: Any, **kwargs: Any) -> subprocess.Popen[Any]:
         if type(args[0]) == list and platform.system() == "Windows":
             if args[0][0].startswith("./tari"):
                 args[0][0] += ".exe"
@@ -25,7 +25,7 @@ class SubprocessWrapper:
         else:
             return subprocess.Popen(*args, **kwargs)
 
-    def run(*args, **kwargs) -> subprocess.CompletedProcess[str]:
+    def run(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess[str]:
         if type(args[0]) == list and platform.system() == "Windows":
             if args[0][0].startswith("./tari"):
                 args[0][0] += ".exe"
@@ -34,6 +34,3 @@ class SubprocessWrapper:
             return subprocess.run(" ".join(args[0]), *args[1:], **kwargs)
         else:
             return subprocess.run(*args, **kwargs)
-
-
-SubprocessWrapper.call(["cargo", "--version"])

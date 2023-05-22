@@ -21,7 +21,7 @@ class SignalingServer(CommonExec):
             f"127.0.0.1:{self.json_rpc_port}",
         ]
         self.run(REDIRECT_SIGNALING_STDOUT)
-        print("Waiting for signaling server to start", end="")
+        print("Waiting for signaling server to start.", end="")
         while not os.path.exists("signaling_server/pid"):
             print(".", end="")
             time.sleep(1)

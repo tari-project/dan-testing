@@ -57,7 +57,7 @@ class Indexer(CommonExec):
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
         while not os.path.exists(f"indexer/localnet/pid"):
-            print("Waiting for indexer to start")
+            print("Waiting for indexer to start.")
             if self.process.poll() is None:
                 time.sleep(1)
             else:
