@@ -20,7 +20,11 @@ class JrpcDanWalletDaemon:
         if self.token:
             headers = {"Authorization": f"Bearer {self.token}"}
         response = requests.post(self.url, json={"jsonrpc": "2.0", "method": method, "id": self.id, "params": params}, headers=headers)
-        return response.json()["result"]
+        x = response.json()
+        if "error" in x:
+            print(x["error"])
+        else:
+            return x["result"]
 
     def auth(self):
         resp = self.call("auth.request", [["Admin"], None])
@@ -31,10 +35,11 @@ class JrpcDanWalletDaemon:
     def keys_list(self):
         return self.call("keys.list")
 
-    def accounts_create(
-        self, name: str, signing_key_index: int = 0, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True
-    ):
-        return self.call("accounts.create", [name, signing_key_index, custom_access_rules, fee, is_default])
+    def accounts_create(self, name: str, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True):
+        return self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+
+    def create_free_test_coins(self, account: Any, amount: int, fee: int | None = None):
+        return self.call("accounts.create_free_test_coins", [account, amount, fee])
 
     def accounts_list(self, offset=0, limit=1):
         return self.call("accounts.list", [offset, limit])
