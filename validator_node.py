@@ -78,7 +78,7 @@ class ValidatorNode(CommonExec):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
-                raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+                raise Exception(f"Validator node did not start successfully: Exit code:{self.process.poll()}")
         print("done")
         self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
 

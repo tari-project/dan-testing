@@ -33,6 +33,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import threading
 import time
 import traceback
@@ -216,7 +217,7 @@ def cli_loop():
 def stress_test():
     global wallet, base_node, miner, dan_wallets, indexer, validator_nodes, tari_connector_sample, server
 
-    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
+    num_of_tx = 100  # this is how many times we send the funds back and forth for each of two wallets
 
     def send_tx(src_id: int, dst_id: int):
         src_account = dan_wallets[src_id].jrpc_client.accounts_list()[("accounts")][0]
@@ -224,7 +225,8 @@ def stress_test():
         res_addr = [1] * 32
         src_public_key = src_account["public_key"]
         dst_public_key = dst_account["public_key"]
-        for _ in range(num_of_tx):
+        for i in range(num_of_tx):
+            print(f"tx {src_id} -> {dst_id} ({i})")
             # dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
             # dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
             dan_wallets[src_id].jrpc_client.transfer(src_account, 1, res_addr, dst_public_key, 1)
@@ -261,10 +263,9 @@ def check_executable(file_name: str):
 
 
 def wait_for_vns_to_sync():
-    print("Waiting for VNs to sync to", base_node.grpc_client.get_tip(), end=".")
+    print("Waiting for VNs to sync to", base_node.grpc_client.get_tip())
     # We have to check if VNs are already running their jrpc server
     while True:
-        print(".", end="")
         try:
             all(
                 vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] != base_node.grpc_client.get_tip() - 3
@@ -277,8 +278,13 @@ def wait_for_vns_to_sync():
         vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] != base_node.grpc_client.get_tip() - 3
         for vn in validator_nodes.values()
     ):
-        print(".", end="")
+        print(
+            [vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] for vn in validator_nodes.values()],
+            base_node.grpc_client.get_tip(),
+            end="                       \r",
+        )
         time.sleep(1)
+    print()
     print("done")
 
 
@@ -372,7 +378,6 @@ try:
         comms_stats = indexer.jrpc_client.get_comms_stats()
         print(connections)
         print(comms_stats)
-    print_step("CREATING DAN WALLETS DAEMONS")
 
     dan_wallets: dict[int, DanWalletDaemon] = {}
 
@@ -384,24 +389,33 @@ try:
         print_step("Starting signalling server")
         signaling_server = SignalingServer()
         signaling_server_jrpc_port = signaling_server.json_rpc_port
+    print_step("CREATING DAN WALLETS DAEMONS")
 
     for dwallet_id in range(SPAWN_WALLETS):
         # vn_id = min(SPAWN_VNS - 1, dwallet_id)
         if indexer and signaling_server_jrpc_port:
             dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer.json_rpc_port, signaling_server_jrpc_port)
 
+    miner.mine(23)
     wait_for_vns_to_sync()
 
-    for d_id in range(SPAWN_WALLETS):
-        print(f"Waiting for Dan{d_id} JRPC.", end="")
+    def spawn_wallet(d_id: int):
         while True:
             try:
                 dan_wallets[d_id].jrpc_client.auth()
                 break
             except:
-                print(".", end="")
-            time.sleep(1)
-        print("done")
+                time.sleep(1)
+        print(f"Dan Wallet {d_id} created")
+
+    threads: list[threading.Thread] = []
+    for d_id in range(SPAWN_WALLETS):
+        thread = threading.Thread(target=spawn_wallet, args=(d_id,))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
     # Publish template
     print_step("PUBLISHING TEMPLATE")
@@ -413,57 +427,72 @@ try:
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
-        for id in dan_wallets:
-            dan_wallet_jrpc = dan_wallets[id].jrpc_client
-            # some_dan_wallet_jrpc = next(iter(dan_wallets.values())).jrpc_client
-            # dan_wallet_jrpc.accounts_create(f"TestAccount_{id}")
-            dan_wallet_jrpc.create_free_test_coins({"Name": f"TestAccount_{id}"}, 12345)
-            del dan_wallet_jrpc
-        burns = {}
-        accounts = {}
-        print_step(f"BURNING {BURN_AMOUNT}")
-        for id in dan_wallets:
-            dan_wallet_jrpc = dan_wallets[id].jrpc_client
-            account = dan_wallet_jrpc.accounts_list(0, 1)["accounts"][0]
-            accounts[id] = account
-            public_key = account["public_key"]
-            burns[id] = wallet.grpc_client.burn(BURN_AMOUNT, bytes.fromhex(public_key))
-            del dan_wallet_jrpc
-            del public_key
-            del account
-        # Wait for the burn to be in the mempool
-        print("Waiting for all burns to be in mempool.", end="")
-        while base_node.grpc_client.get_mempool_size() != len(dan_wallets):
-            print(".", end="")
-            time.sleep(1)
-        miner.mine(4)  # Mine the burns
-        print("done")
-        print("Wait until they are all mined.", end="")
-        while base_node.grpc_client.get_mempool_size() != 0:
-            print(".", end="")
-            miner.mine(1)  # Mine the burns
-            time.sleep(1)
-        print("done")
-        miner.mine(3)  # mine 3 more blocks to have confirmation
-        wait_for_vns_to_sync()
-        time.sleep(10)
-        print_step("CLAIM BURN")
-        for id in dan_wallets:
-            dan_wallet_jrpc = dan_wallets[id].jrpc_client
-            dan_wallet_jrpc.claim_burn(burns[id], accounts[id])
-            del dan_wallet_jrpc
-        print_step("CHECKING THE BALANCE")
-        for id in dan_wallets:
-            # Claim the burn
+        threads: list[threading.Thread] = []
+        start = time.time()
+
+        def create_account(name: str, amount: int):
+            print(f"Account {name} creation started")
+            dan_wallet_jrpc.create_free_test_coins(name, amount)
+            print(f"Account {name} created")
+
+        num_of_accounts_per_dan_wallet = 80
+        for i in range(num_of_accounts_per_dan_wallet):
             for id in dan_wallets:
                 dan_wallet_jrpc = dan_wallets[id].jrpc_client
-                while (
-                    dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["balance"]
-                    + dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["confidential_balance"]
-                    == 0
-                ):
-                    time.sleep(1)
-                del dan_wallet_jrpc
+                thread = threading.Thread(
+                    target=create_account, args=({"Name": f"TestAccount_{i+id*num_of_accounts_per_dan_wallet}"}, 12345)
+                )
+                threads.append(thread)
+                thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        # burns = {}
+        # accounts = {}
+        # print_step(f"BURNING {BURN_AMOUNT}")
+        # for id in dan_wallets:
+        #     dan_wallet_jrpc = dan_wallets[id].jrpc_client
+        #     account = dan_wallet_jrpc.accounts_list(0, 1)["accounts"][0]
+        #     accounts[id] = account
+        #     public_key = account["public_key"]
+        #     burns[id] = wallet.grpc_client.burn(BURN_AMOUNT, bytes.fromhex(public_key))
+        #     del dan_wallet_jrpc
+        #     del public_key
+        #     del account
+        # # Wait for the burn to be in the mempool
+        # print("Waiting for all burns to be in mempool.", end="")
+        # while base_node.grpc_client.get_mempool_size() != len(dan_wallets):
+        #     print(".", end="")
+        #     time.sleep(1)
+        # miner.mine(4)  # Mine the burns
+        # print("done")
+        # print("Wait until they are all mined.", end="")
+        # while base_node.grpc_client.get_mempool_size() != 0:
+        #     print(".", end="")
+        #     miner.mine(1)  # Mine the burns
+        #     time.sleep(1)
+        # print("done")
+        # miner.mine(3)  # mine 3 more blocks to have confirmation
+        # wait_for_vns_to_sync()
+        # time.sleep(10)
+        # print_step("CLAIM BURN")
+        # for id in dan_wallets:
+        #     dan_wallet_jrpc = dan_wallets[id].jrpc_client
+        #     dan_wallet_jrpc.claim_burn(burns[id], accounts[id])
+        #     del dan_wallet_jrpc
+        # print_step("CHECKING THE BALANCE")
+        # for id in dan_wallets:
+        #     # Claim the burn
+        #     for id in dan_wallets:
+        #         dan_wallet_jrpc = dan_wallets[id].jrpc_client
+        #         while (
+        #             dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["balance"]
+        #             + dan_wallet_jrpc.get_balances(accounts[id])["balances"][0]["confidential_balance"]
+        #             == 0
+        #         ):
+        #             time.sleep(1)
+        #         del dan_wallet_jrpc
 
         print_step("BURNED AND CLAIMED")
 
