@@ -11,8 +11,9 @@ from common_exec import CommonExec
 
 
 class Indexer(CommonExec):
-    def __init__(self, base_node_grpc_port, peers=[]):
-        super().__init__("Indexer")
+    def __init__(self, indexer_id: int, base_node_grpc_port: int, peers=[]):
+        super().__init__("Indexer", indexer_id)
+        self.id = indexer_id
         self.public_port = self.get_port("public_address")
         self.public_adress = f"/ip4/127.0.0.1/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
@@ -34,7 +35,7 @@ class Indexer(CommonExec):
         self.exec = [
             *run,
             "-b",
-            f"indexer",
+            f"indexer_{self.id}",
             "--network",
             NETWORK,
             "-p",
@@ -56,18 +57,18 @@ class Indexer(CommonExec):
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
-        while not os.path.exists(f"indexer/localnet/pid"):
-            print("Waiting for indexer to start.")
+        while not os.path.exists(f"indexer_{self.id}/localnet/pid"):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
+        print(f"Indexer {self.id} started")
 
     def get_address(self):
         if NETWORK == "localnet":
-            indexer_id_file_name = f"./indexer/indexer_id.json"
+            indexer_id_file_name = f"./indexer_{self.id}/indexer_id.json"
         else:
-            indexer_id_file_name = f"./indexer/indexer_id_{NETWORK}.json"
+            indexer_id_file_name = f"./indexer_{self.id}/indexer_id_{NETWORK}.json"
         while not os.path.exists(indexer_id_file_name):
             time.sleep(1)
         f = open(indexer_id_file_name, "rt")

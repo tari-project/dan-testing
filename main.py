@@ -4,12 +4,13 @@ from base_node import BaseNode
 from config import (
     BURN_AMOUNT,
     COLOR_RESET,
+    CREATE_ACCOUNTS_PER_WALLET,
     DEFAULT_TEMPLATE_FUNCTION,
     DELETE_EVERYTHING_BEFORE,
     DELETE_STDOUT_LOGS,
-    SPAWN_INDEXER,
+    SPAWN_INDEXERS,
     SPAWN_VNS,
-    SPAWN_WALLETS,
+    SPAWN_WALLETS_PER_INDEXER,
     STEP_COLOR,
     STEP_OUTER_COLOR,
     STEPS_CREATE_ACCOUNT,
@@ -22,19 +23,19 @@ from config import (
 from dan_wallet_daemon import DanWalletDaemon
 from indexer import Indexer
 from miner import Miner
+from signaling_server import SignalingServer
+from stats import stats
+from tari_connector_sample import TariConnectorSample
 from template import Template
 from template_server import Server
+from threads import threads
 from validator_node import ValidatorNode
 from wallet import Wallet
-from signaling_server import SignalingServer
-from tari_connector_sample import TariConnectorSample
 import base64
 import json
 import os
 import re
 import shutil
-import sys
-import threading
 import time
 import traceback
 import webbrowser
@@ -204,6 +205,8 @@ def cli_loop():
                 elif command.startswith("eval"):
                     # In case you need for whatever reason access to the running python script
                     eval(for_eval[len("eval ") :])
+                elif command == "stats":
+                    print(stats)
                 else:
                     print("Wrong command")
             except Exception as ex:
@@ -217,7 +220,7 @@ def cli_loop():
 def stress_test():
     global wallet, base_node, miner, dan_wallets, indexer, validator_nodes, tari_connector_sample, server
 
-    num_of_tx = 100  # this is how many times we send the funds back and forth for each of two wallets
+    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
 
     def send_tx(src_id: int, dst_id: int):
         src_account = dan_wallets[src_id].jrpc_client.accounts_list()[("accounts")][0]
@@ -233,22 +236,18 @@ def stress_test():
             # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
 
     # We will send back and forth between two wallets. So with n*2 wallets we have n concurrent TXs
-    threads: list[threading.Thread] = []
     start = time.time()
-    for i in range(SPAWN_WALLETS // 2):
-        thread = threading.Thread(target=send_tx, args=(i * 2, i * 2 + 1))
-        threads.append(thread)
-        thread.start()
+    for i in range(SPAWN_WALLETS_PER_INDEXER // 2):
+        threads.add(send_tx, (i * 2, i * 2 + 1))
 
-    for thread in threads:
-        thread.join()
+    threads.wait()
 
     total_time = time.time() - start
 
-    total_num_of_tx = SPAWN_WALLETS // 2 * num_of_tx * 2
+    total_num_of_tx = SPAWN_WALLETS_PER_INDEXER // 2 * num_of_tx * 2
     print(f"Total number of Tx {total_num_of_tx}")
     print(f"Total time {total_time}")
-    print(f"Number of concurrent TXs : {SPAWN_WALLETS//2}")
+    print(f"Number of concurrent TXs : {SPAWN_WALLETS_PER_INDEXER//2}")
     print(f"Avg time for one TX {total_time/total_num_of_tx}")
 
 
@@ -280,12 +279,11 @@ def wait_for_vns_to_sync():
     ):
         print(
             [vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] for vn in validator_nodes.values()],
-            base_node.grpc_client.get_tip(),
+            base_node.grpc_client.get_tip() - 3,
             end="                       \r",
         )
         time.sleep(1)
-    print()
-    print("done")
+    print("done\033[K")
 
 
 try:
@@ -295,7 +293,7 @@ try:
             if os.path.isdir(full_path):
                 if DELETE_EVERYTHING_BEFORE:
                     if re.match(
-                        r"(config|data|base_node|log|peer_db|miner|vn_\d+|wallet|dan_wallet_daemon_\d+|templates|stdout|signaling_server|indexer)",
+                        r"(config|data|base_node|log|peer_db|miner|vn_\d+|wallet|dan_wallet_daemon_\d+|templates|stdout|signaling_server|indexer_\d+)",
                         file,
                     ):
                         shutil.rmtree(full_path)
@@ -329,7 +327,7 @@ try:
     # Set ports for miner
     miner = Miner(base_node.grpc_port, wallet.grpc_port)
     # Mine some blocks
-    miner.mine((SPAWN_VNS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
+    miner.mine((SPAWN_VNS + SPAWN_INDEXERS * SPAWN_WALLETS_PER_INDEXER) * 2 + 13)  # Make sure we have enough funds
     # Start VNs
     print_step("CREATING VNS")
     validator_nodes: dict[int, ValidatorNode] = {}
@@ -363,25 +361,32 @@ try:
     miner.mine(20)  # Mine the register TXs
     time.sleep(1)
 
-    indexer = None
-    if SPAWN_INDEXER:
-        print_step("STARTING INDEXER")
-        indexer = Indexer(base_node.grpc_port, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes])
-        time.sleep(1)
-        # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
-        # to start comms
-        try:
-            indexer.jrpc_client.get_substate("component_d082c9cfb6507e302d5e252f43f4c008924648fc9bff18eaca5820a87808fc42", 0)
-        except:
-            pass
-        connections = indexer.jrpc_client.get_connections()
-        comms_stats = indexer.jrpc_client.get_comms_stats()
-        print(connections)
-        print(comms_stats)
+    indexer: dict[int, Indexer] = {}
+    if SPAWN_INDEXERS > 0:
+        print_step("STARTING INDEXERS")
+
+        def spawn_indexer(id: int):
+            indexer[id] = Indexer(id, base_node.grpc_port, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes])
+            time.sleep(1)
+            # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
+            # to start comms
+            try:
+                indexer[id].jrpc_client.get_substate("component_d082c9cfb6507e302d5e252f43f4c008924648fc9bff18eaca5820a87808fc42", 0)
+            except:
+                pass
+
+        for id in range(SPAWN_INDEXERS):
+            threads.add(spawn_indexer, (id,))
+
+        threads.wait()
+        # connections = indexer.jrpc_client.get_connections()
+        # comms_stats = indexer.jrpc_client.get_comms_stats()
+        # print(connections)
+        # print(comms_stats)
 
     dan_wallets: dict[int, DanWalletDaemon] = {}
 
-    if not indexer and SPAWN_WALLETS > 0:
+    if SPAWN_INDEXERS == 0 and SPAWN_WALLETS_PER_INDEXER > 0:
         raise Exception("Can't create a wallet when there is no indexer")
 
     signaling_server_jrpc_port = None
@@ -391,10 +396,23 @@ try:
         signaling_server_jrpc_port = signaling_server.json_rpc_port
     print_step("CREATING DAN WALLETS DAEMONS")
 
-    for dwallet_id in range(SPAWN_WALLETS):
-        # vn_id = min(SPAWN_VNS - 1, dwallet_id)
-        if indexer and signaling_server_jrpc_port:
-            dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer.json_rpc_port, signaling_server_jrpc_port)
+    def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
+        dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer_jrpc, signaling_server_jrpc)
+
+    for indexer_id in range(SPAWN_INDEXERS):
+        for dwallet_id in range(SPAWN_WALLETS_PER_INDEXER):
+            # vn_id = min(SPAWN_VNS - 1, dwallet_id)
+            if indexer and signaling_server_jrpc_port:
+                threads.add(
+                    create_wallet,
+                    (
+                        dwallet_id + indexer_id * SPAWN_WALLETS_PER_INDEXER,
+                        indexer[indexer_id].json_rpc_port,
+                        signaling_server_jrpc_port,
+                    ),
+                )
+
+    threads.wait()
 
     miner.mine(23)
     wait_for_vns_to_sync()
@@ -408,15 +426,11 @@ try:
                 time.sleep(1)
         print(f"Dan Wallet {d_id} created")
 
-    threads: list[threading.Thread] = []
-    for d_id in range(SPAWN_WALLETS):
-        thread = threading.Thread(target=spawn_wallet, args=(d_id,))
-        threads.append(thread)
-        thread.start()
+    for indexer_id in range(SPAWN_INDEXERS):
+        for d_id in range(SPAWN_WALLETS_PER_INDEXER):
+            threads.add(spawn_wallet, (d_id + indexer_id * SPAWN_INDEXERS,))
 
-    for thread in threads:
-        thread.join()
-
+    threads.wait()
     # Publish template
     print_step("PUBLISHING TEMPLATE")
     template.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
@@ -427,26 +441,19 @@ try:
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
-        threads: list[threading.Thread] = []
         start = time.time()
 
-        def create_account(name: str, amount: int):
+        def create_account(id: int, amount: int):
+            name = {"Name": f"TestAccount_{i+id*CREATE_ACCOUNTS_PER_WALLET}"}
+            dan_wallet_jrpc = dan_wallets[id].jrpc_client
             print(f"Account {name} creation started")
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
 
-        num_of_accounts_per_dan_wallet = 80
-        for i in range(num_of_accounts_per_dan_wallet):
+        for i in range(CREATE_ACCOUNTS_PER_WALLET):
             for id in dan_wallets:
-                dan_wallet_jrpc = dan_wallets[id].jrpc_client
-                thread = threading.Thread(
-                    target=create_account, args=({"Name": f"TestAccount_{i+id*num_of_accounts_per_dan_wallet}"}, 12345)
-                )
-                threads.append(thread)
-                thread.start()
-
-        for thread in threads:
-            thread.join()
+                threads.add(create_account, (id, 12345))
+        threads.wait()
 
         # burns = {}
         # accounts = {}
@@ -494,7 +501,7 @@ try:
         #             time.sleep(1)
         #         del dan_wallet_jrpc
 
-        print_step("BURNED AND CLAIMED")
+        # print_step("BURNED AND CLAIMED")
 
     if STEPS_CREATE_TEMPLATE:
         print_step("Creating template")
@@ -519,6 +526,8 @@ try:
 except Exception as ex:
     print("Failed setup:", ex)
     traceback.print_exc()
+except KeyboardInterrupt:
+    print("ctrl-c pressed during setup")
 
 if "tari_connector_sample" in locals():
     del tari_connector_sample

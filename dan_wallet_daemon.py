@@ -6,6 +6,7 @@ import requests
 import time
 from typing import Any
 from common_exec import CommonExec
+from stats import stats
 
 
 class JrpcDanWalletDaemon:
@@ -36,10 +37,16 @@ class JrpcDanWalletDaemon:
         return self.call("keys.list")
 
     def accounts_create(self, name: str, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True):
-        return self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+        id = stats.start_run("accounts.create")
+        res = self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+        stats.end_run(id)
+        return res
 
     def create_free_test_coins(self, account: Any, amount: int, fee: int | None = None):
-        return self.call("accounts.create_free_test_coins", [account, amount, fee])
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call("accounts.create_free_test_coins", [account, amount, fee])
+        stats.end_run(id)
+        return res
 
     def accounts_list(self, offset=0, limit=1):
         return self.call("accounts.list", [offset, limit])
@@ -80,12 +87,18 @@ class JrpcDanWalletDaemon:
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
     def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
-        return self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        stats.end_run(id)
+        return res
 
     def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
-        return self.call(
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call(
             "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
         )
+        stats.end_run(id)
+        return res
 
 
 class DanWalletDaemon(CommonExec):
@@ -115,14 +128,12 @@ class DanWalletDaemon(CommonExec):
         jrpc_address = f"http://127.0.0.1:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
         self.http_client = DanWalletUI(self.id, jrpc_address)
-        print("Waiting for dan wallet to start.", end="")
         while not os.path.exists(f"dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
-            print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"DAN wallet did not start successfully: Exit code:{self.process.poll()}")
-        print("done")
+        print(f"Dan wallet daemon {dan_wallet_id} started")
 
 
 class DanWalletUI(CommonExec):

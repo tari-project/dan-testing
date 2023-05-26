@@ -82,7 +82,7 @@ class ValidatorNode(CommonExec):
         print("done")
         self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
 
-    def get_address(self):
+    def get_address(self) -> str:
         validator_node_id_file_name = f"./vn_{self.id}/{NETWORK}/validator_node_id.json"
         while not os.path.exists(validator_node_id_file_name):
             time.sleep(1)

@@ -3,7 +3,7 @@ __pycache__
 base_node
 counter
 dan_wallet_daemon*/
-indexer
+indexer*/
 log
 miner
 protos/*
