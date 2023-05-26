@@ -7,6 +7,9 @@ import time
 from typing import Any
 from common_exec import CommonExec
 from stats import stats
+from subprocess_wrapper import SubprocessWrapper
+from threading import Lock
+import subprocess
 
 
 class JrpcDanWalletDaemon:
@@ -136,12 +139,36 @@ class DanWalletDaemon(CommonExec):
         print(f"Dan wallet daemon {dan_wallet_id} started")
 
 
+npm_install_done = False
+npm_install_mutex = Lock()
+
+
 class DanWalletUI(CommonExec):
     def __init__(self, dan_wallet_id, daemon_jrpc_address):
+        global npm_install_done, npm_install_mutex
         super().__init__("dan_wallet_ui", dan_wallet_id)
-        npm = "npm.cmd"
+        npm_install_mutex.acquire()
+        if not npm_install_done:
+            self.process = SubprocessWrapper.call(
+                ["npm", "install"],
+                stdin=subprocess.PIPE,
+                stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+                stderr=subprocess.STDOUT,
+                cwd="../tari-dan/applications/tari_dan_wallet_web_ui",
+            )
+            npm_install_done = True
+        npm_install_mutex.release()
         self.http_port = self.get_port("HTTP")
-        self.exec = [npm, "--prefix", "../tari-dan/applications/tari_dan_wallet_web_ui", "run", "dev", "--", "--port", str(self.http_port)]
+        self.exec = [
+            "npm",
+            "--prefix",
+            "../tari-dan/applications/tari_dan_wallet_web_ui",
+            "run",
+            "dev",
+            "--",
+            "--port",
+            str(self.http_port),
+        ]
         self.daemon_jrpc_address = daemon_jrpc_address
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = daemon_jrpc_address
         self.run(REDIRECT_DAN_WALLET_WEBUI_STDOUT)
