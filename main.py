@@ -31,6 +31,7 @@ from template_server import Server
 from threads import threads
 from validator_node import ValidatorNode
 from wallet import Wallet
+from scan import scan
 import base64
 import json
 import os
@@ -207,6 +208,8 @@ def cli_loop():
                     eval(for_eval[len("eval ") :])
                 elif command == "stats":
                     print(stats)
+                elif command == "scan":
+                    scan()
                 else:
                     print("Wrong command")
             except Exception as ex:
@@ -522,6 +525,7 @@ try:
             tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://127.0.0.1:{signaling_server.json_rpc_port}")
     if STRESS_TEST:
         stress_test()
+    print(stats)
     cli_loop()
 except Exception as ex:
     print("Failed setup:", ex)
