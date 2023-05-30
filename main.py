@@ -435,7 +435,7 @@ try:
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
 
-        num_of_accounts_per_dan_wallet = 80
+        num_of_accounts_per_dan_wallet = 50
         for i in range(num_of_accounts_per_dan_wallet):
             for id in dan_wallets:
                 dan_wallet_jrpc = dan_wallets[id].jrpc_client
