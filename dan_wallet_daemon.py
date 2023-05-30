@@ -6,6 +6,10 @@ import requests
 import time
 from typing import Any
 from common_exec import CommonExec
+from stats import stats
+from subprocess_wrapper import SubprocessWrapper
+from threading import Lock
+import subprocess
 
 
 class JrpcDanWalletDaemon:
@@ -36,10 +40,16 @@ class JrpcDanWalletDaemon:
         return self.call("keys.list")
 
     def accounts_create(self, name: str, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True):
-        return self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+        id = stats.start_run("accounts.create")
+        res = self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+        stats.end_run(id)
+        return res
 
     def create_free_test_coins(self, account: Any, amount: int, fee: int | None = None):
-        return self.call("accounts.create_free_test_coins", [account, amount, fee])
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call("accounts.create_free_test_coins", [account, amount, fee])
+        stats.end_run(id)
+        return res
 
     def accounts_list(self, offset=0, limit=1):
         return self.call("accounts.list", [offset, limit])
@@ -80,12 +90,18 @@ class JrpcDanWalletDaemon:
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
     def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
-        return self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        stats.end_run(id)
+        return res
 
     def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
-        return self.call(
+        id = stats.start_run("accounts.create_free_test_coins")
+        res = self.call(
             "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
         )
+        stats.end_run(id)
+        return res
 
 
 class DanWalletDaemon(CommonExec):
@@ -115,22 +131,44 @@ class DanWalletDaemon(CommonExec):
         jrpc_address = f"http://127.0.0.1:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
         self.http_client = DanWalletUI(self.id, jrpc_address)
-        print("Waiting for dan wallet to start.", end="")
         while not os.path.exists(f"dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
-            print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"DAN wallet did not start successfully: Exit code:{self.process.poll()}")
-        print("done")
+        print(f"Dan wallet daemon {dan_wallet_id} started")
+
+
+npm_install_done = False
+npm_install_mutex = Lock()
 
 
 class DanWalletUI(CommonExec):
     def __init__(self, dan_wallet_id, daemon_jrpc_address):
+        global npm_install_done, npm_install_mutex
         super().__init__("dan_wallet_ui", dan_wallet_id)
-        npm = "npm.cmd"
+        npm_install_mutex.acquire()
+        if not npm_install_done:
+            self.process = SubprocessWrapper.call(
+                ["npm", "install"],
+                stdin=subprocess.PIPE,
+                stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+                stderr=subprocess.STDOUT,
+                cwd="../tari-dan/applications/tari_dan_wallet_web_ui",
+            )
+            npm_install_done = True
+        npm_install_mutex.release()
         self.http_port = self.get_port("HTTP")
-        self.exec = [npm, "--prefix", "../tari-dan/applications/tari_dan_wallet_web_ui", "run", "dev", "--", "--port", str(self.http_port)]
+        self.exec = [
+            "npm",
+            "--prefix",
+            "../tari-dan/applications/tari_dan_wallet_web_ui",
+            "run",
+            "dev",
+            "--",
+            "--port",
+            str(self.http_port),
+        ]
         self.daemon_jrpc_address = daemon_jrpc_address
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = daemon_jrpc_address
         self.run(REDIRECT_DAN_WALLET_WEBUI_STDOUT)
