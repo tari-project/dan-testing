@@ -454,6 +454,7 @@ try:
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
 
+
         for i in range(CREATE_ACCOUNTS_PER_WALLET):
             for id in dan_wallets:
                 threads.add(create_account, (id, 12345))
