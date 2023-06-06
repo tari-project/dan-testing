@@ -28,6 +28,12 @@ class JrpcValidatorNode:
     def get_epoch_manager_stats(self):
         return self.call("get_epoch_manager_stats")
 
+    def get_all_vns(self, epoch):
+        return self.call("get_all_vns", epoch)
+
+    def get_fees(self, claim_leader_public_key, epoch):
+        return self.call("get_fees", [claim_leader_public_key, epoch])
+
 
 class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):

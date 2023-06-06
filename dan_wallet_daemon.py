@@ -33,7 +33,7 @@ class JrpcDanWalletDaemon:
     def auth(self):
         resp = self.call("auth.request", [["Admin"], None])
         auth_token = resp["auth_token"]
-        resp = self.call("auth.accept", [auth_token])
+        resp = self.call("auth.accept", [auth_token, "AdminToken"])
         self.token = resp["permissions_token"]
 
     def keys_list(self):
