@@ -1,7 +1,7 @@
 # type:ignore
 import struct
 
-from config import DEFAULT_TEMPLATE, REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_STDOUT, USE_BINARY_EXECUTABLE
+from config import REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_STDOUT, USE_BINARY_EXECUTABLE
 from ports import ports
 from dan_wallet_daemon import JrpcDanWalletDaemon
 from typing import Any
@@ -13,7 +13,7 @@ import subprocess
 
 
 class Template:
-    def __init__(self, template=DEFAULT_TEMPLATE, name=None):
+    def __init__(self, template, name=None):
         self.template = template
         self.name = name or template
         self.generate()
@@ -74,25 +74,19 @@ class Template:
         else:
             print("Registration failed", result.stdout.decode())
 
-    def call_function(self, function_name: str, dan_wallet_client: JrpcDanWalletDaemon, params: list[Any] = []):
+    def call_function(self, function_name: str, dan_wallet_client: JrpcDanWalletDaemon, params: list[Any] = [], dump_into_account: bool = True ):
         for p in range(len(params)):
             if params[p].startswith("w:"):
-                params[p] = {"type": "Workspace", "value": params[p][2:]}
-            else:
-                try:
-                    i = int(params[p])
-                    params[p] = array.array("B", struct.pack("<I", i)).tolist()
-                except:
-                    pass
-                params[p] = {"type": "Literal", "value": params[p]}
+                params[p] = f"Workspace({params[p][2:]})"
         result = dan_wallet_client.transaction_submit_instruction(
             {
                 "CallFunction": {
-                    "template_address": array.array("B", bytes.fromhex(self.id)).tolist(),
+                    "template_address": self.id,
                     "function": function_name,
                     "args": params,
                 }
-            }
+            },
+            dump_buckets=dump_into_account,
         )
         print(result)
         return result

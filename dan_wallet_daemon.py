@@ -17,6 +17,7 @@ class JrpcDanWalletDaemon:
         self.id = 0
         self.url = jrpc_url
         self.token = None
+        self.last_account_name = ""
 
     def call(self, method, params=[]):
         self.id += 1
@@ -42,23 +43,34 @@ class JrpcDanWalletDaemon:
     def accounts_create(self, name: str, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True):
         id = stats.start_run("accounts.create")
         res = self.call("accounts.create", [name, custom_access_rules, fee, is_default])
+        self.last_account_name = name
         stats.end_run(id)
         return res
 
     def create_free_test_coins(self, account: Any, amount: int, fee: int | None = None):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call("accounts.create_free_test_coins", [account, amount, fee])
+        self.last_account_name = account
         stats.end_run(id)
         return res
 
     def accounts_list(self, offset=0, limit=1):
         return self.call("accounts.list", [offset, limit])
 
-    def transaction_submit_instruction(self, instruction):
-        tx_id = self.call(
-            "transactions.submit_instruction",
-            {"instruction": instruction, "fee_account": "TestAccount", "dump_outputs_into": "TestAccount", "fee": 1},
-        )["hash"]
+    def transaction_submit_instruction(self, instruction, dump_buckets = True):
+        tx_id = 0
+        if dump_buckets:
+            tx_id = self.call(
+                "transactions.submit_instruction",
+                {"instruction": instruction, "fee_account": self.last_account_name, "dump_outputs_into": self.last_account_name, "fee": 1000},
+
+            )["hash"]
+        else:
+            tx_id = self.call(
+                "transactions.submit_instruction",
+                {"instruction": instruction, "fee_account": self.last_account_name, "fee": 1000},
+
+            )["hash"]
         while True:
             tx = self.transaction_get(tx_id)
             status = tx["status"]
