@@ -1,6 +1,7 @@
 #### ignore all .idea files ...
 *
 
+workspace.xml
 #### except
 
 # Version Control configuration for your project

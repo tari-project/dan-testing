@@ -6,6 +6,7 @@ from config import (
     COLOR_RESET,
     CREATE_ACCOUNTS_PER_WALLET,
     DEFAULT_TEMPLATE_FUNCTION,
+    TEMPLATES,
     DELETE_EVERYTHING_BEFORE,
     DELETE_STDOUT_LOGS,
     SPAWN_INDEXERS,
@@ -321,7 +322,9 @@ try:
     server.run()
     print_step("GENERATING TEMPLATE")
     # Generate template
-    template = Template()
+    templates = {}
+    for t in TEMPLATES.split(","):
+        templates[t] = Template(t)
     print_step("STARTING BASE NODE")
     # Start base node
     base_node = BaseNode()
@@ -432,14 +435,17 @@ try:
 
     for indexer_id in range(SPAWN_INDEXERS):
         for d_id in range(SPAWN_WALLETS_PER_INDEXER):
+            print("....")
             threads.add(spawn_wallet, (d_id + indexer_id * SPAWN_WALLETS_PER_INDEXER,))
 
     threads.wait()
     # Publish template
     print_step("PUBLISHING TEMPLATE")
-    template.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
+    for t in templates.values():
+      t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
+    miner.mine(4)
 
-    # Wait for the VNs to pickup the blocks from base layer
+      # Wait for the VNs to pickup the blocks from base layer
     # TODO wait for VN to download and activate the template
     wait_for_vns_to_sync()
 
@@ -512,12 +518,17 @@ try:
         print_step("Creating template")
 
         # Call the function
-        TEMPLATE_FUNCTION = DEFAULT_TEMPLATE_FUNCTION.split("=")
-        FUNCTION_ARGS = len(TEMPLATE_FUNCTION) > 1 and TEMPLATE_FUNCTION[1].split(",") or []
+        for function in DEFAULT_TEMPLATE_FUNCTION.split("|"):
+            TEMPLATE_FUNCTION = function.split("=")
+            FUNCTION_ARGS = len(TEMPLATE_FUNCTION) > 1 and TEMPLATE_FUNCTION[1].split(",") or []
 
-        print(TEMPLATE_FUNCTION)
-        print(FUNCTION_ARGS)
-        template.call_function(TEMPLATE_FUNCTION[0], next(iter(dan_wallets.values())).jrpc_client, FUNCTION_ARGS)
+            print(TEMPLATE_FUNCTION)
+            print(FUNCTION_ARGS)
+            template_name = TEMPLATE_FUNCTION[0].split("::")
+            template= templates[template_name[0]]
+            dump_into_account = "!" in template_name[1]
+            method = template_name[1].replace("!", "")
+            template.call_function(method, next(iter(dan_wallets.values())).jrpc_client, FUNCTION_ARGS, dump_into_account)
 
     if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
         if not STEPS_RUN_SIGNALLING_SERVER:

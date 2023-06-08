@@ -20,15 +20,16 @@ SPAWN_INDEXERS = 1
 SPAWN_WALLETS_PER_INDEXER = 2
 CREATE_ACCOUNTS_PER_WALLET = 1
 # Any one of the templates from `wasm_template`
-DEFAULT_TEMPLATE = "fungible"
-# Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg
+TEMPLATES = "fungible,swap"
+# Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
+# use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
-DEFAULT_TEMPLATE_FUNCTION = "mint=1000000"
+DEFAULT_TEMPLATE_FUNCTION = "fungible::mint=Amount(1000000),\"token1\"|fungible::mint=Amount(2000),\"token2\""
 BURN_AMOUNT = 1000000
 NO_FEES = True
-USE_BINARY_EXECUTABLE = True
+USE_BINARY_EXECUTABLE = False
 STEPS_CREATE_ACCOUNT = True
-STEPS_CREATE_TEMPLATE = False
+STEPS_CREATE_TEMPLATE = True
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = True
 STEPS_RUN_SIGNALLING_SERVER = True
 
@@ -54,4 +55,4 @@ STEP_COLOR = COLOR_BRIGHT_YELLOW
 STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
 
 # If this is False, the cli_loop will be called instead
-STRESS_TEST = True
+STRESS_TEST = False
