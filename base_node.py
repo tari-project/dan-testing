@@ -80,8 +80,8 @@ class BaseNode(CommonExec):
             f"base_node.grpc_enabled=true",
             "-p",
             "base_node.p2p.allow_test_addresses=true",
-            "-p",
-            f'{NETWORK}.p2p.seeds.peer_seeds=""',
+            # "-p",
+            # f'{NETWORK}.p2p.seeds.peer_seeds="369ae9a89c3fc2804d6ec07e20bf10e5d0e72f565a71821fc7c611ae5bee0116::/ip4/34.252.174.111/tcp/18000"',
             "-p",
             "base_node.metadata_auto_ping_interval=3",
         ]

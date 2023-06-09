@@ -70,8 +70,8 @@ class Wallet(CommonExec):
             f"wallet.p2p.public_addresses={self.public_address}",
             "-p",
             "wallet.p2p.allow_test_addresses=true",
-            "-p",
-            f'{NETWORK}.p2p.seeds.peer_seeds=""',
+            # "-p",
+            # f'{NETWORK}.p2p.seeds.peer_seeds=""',
         ]
         self.run(REDIRECT_WALLET_STDOUT)
         # Sometimes it takes a while to establish the grpc connection

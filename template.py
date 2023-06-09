@@ -21,7 +21,7 @@ class Template:
 
     def generate(self):
         try:
-            os.mkdir("templates")
+            os.makedirs("templates")
         except:
             pass
 
