@@ -10,7 +10,6 @@ protos/*
 !protos/__init__.py
 signaling_server
 stdout
-templates
 vn*
 wallet
 *.exe
