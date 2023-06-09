@@ -442,10 +442,10 @@ try:
     # Publish template
     print_step("PUBLISHING TEMPLATE")
     for t in templates.values():
-      t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
+        t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
     miner.mine(4)
 
-      # Wait for the VNs to pickup the blocks from base layer
+    # Wait for the VNs to pickup the blocks from base layer
     # TODO wait for VN to download and activate the template
     wait_for_vns_to_sync()
 
@@ -459,7 +459,6 @@ try:
             print(f"Account {name} creation started")
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
-
 
         for i in range(CREATE_ACCOUNTS_PER_WALLET):
             for id in dan_wallets:
@@ -525,7 +524,7 @@ try:
             print(TEMPLATE_FUNCTION)
             print(FUNCTION_ARGS)
             template_name = TEMPLATE_FUNCTION[0].split("::")
-            template= templates[template_name[0]]
+            template = templates[template_name[0]]
             dump_into_account = "!" in template_name[1]
             method = template_name[1].replace("!", "")
             template.call_function(method, next(iter(dan_wallets.values())).jrpc_client, FUNCTION_ARGS, dump_into_account)

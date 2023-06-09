@@ -16,8 +16,5 @@ class Threads:
             thread.join()
         self.threads = []
 
-    def __del__(self):
-        print("over here")
-
 
 threads = Threads()
