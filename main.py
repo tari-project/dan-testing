@@ -309,6 +309,10 @@ try:
         check_executable("tari_base_node")
         check_executable("tari_console_wallet")
         check_executable("tari_miner")
+        check_executable("tari_indexer")
+        check_executable("tari_dan_wallet_daemon")
+        check_executable("tari_dan_wallet_cli")
+        check_executable("tari_signaling_server")
         check_executable("tari_validator_node")
         check_executable("tari_validator_node_cli")
     try:
