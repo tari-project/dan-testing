@@ -1,6 +1,6 @@
 # type:ignore
 
-from config import NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE
+from config import NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from ports import ports
 import os
 import time
@@ -35,7 +35,7 @@ class Indexer(CommonExec):
         self.exec = [
             *run,
             "-b",
-            f"indexer_{self.id}",
+            f"{DATA_FOLDER}/indexer_{self.id}",
             "--network",
             NETWORK,
             "-p",
@@ -57,7 +57,7 @@ class Indexer(CommonExec):
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
-        while not os.path.exists(f"indexer_{self.id}/localnet/pid"):
+        while not os.path.exists(f"{DATA_FOLDER}/indexer_{self.id}/localnet/pid"):
             if self.process.poll() is None:
                 time.sleep(1)
             else:

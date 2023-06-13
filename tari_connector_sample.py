@@ -1,5 +1,5 @@
 # type:ignore
-from config import REDIRECT_DAN_WALLET_WEBUI_STDOUT
+from config import REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
 from ports import ports
 import os
 from subprocess_wrapper import SubprocessWrapper
@@ -18,7 +18,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "install"],
             stdin=subprocess.PIPE,
-            stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+            stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
             cwd="../tari-connector",
         )
@@ -27,7 +27,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "link"],
             stdin=subprocess.PIPE,
-            stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+            stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
             cwd="../tari-connector",
         )
@@ -35,7 +35,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "install"],
             stdin=subprocess.PIPE,
-            stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+            stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
             cwd="../tari-connector/examples/material-vite-ts",
         )
@@ -43,7 +43,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "link", "tari-connector"],
             stdin=subprocess.PIPE,
-            stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+            stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
             stderr=subprocess.STDOUT,
             cwd="../tari-connector/examples/material-vite-ts",
         )

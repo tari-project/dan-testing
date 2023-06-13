@@ -1,7 +1,7 @@
 # type:ignore
 import os
 import time
-from config import USE_BINARY_EXECUTABLE, REDIRECT_SIGNALING_STDOUT
+from config import USE_BINARY_EXECUTABLE, REDIRECT_SIGNALING_STDOUT, DATA_FOLDER
 from common_exec import CommonExec
 
 
@@ -16,13 +16,13 @@ class SignalingServer(CommonExec):
         self.exec = [
             *run,
             "-b",
-            "signaling_server",
+            f"{DATA_FOLDER}/signaling_server",
             "--listen-addr",
             f"127.0.0.1:{self.json_rpc_port}",
         ]
         self.run(REDIRECT_SIGNALING_STDOUT)
         print("Waiting for signaling server to start.", end="")
-        while not os.path.exists("signaling_server/pid"):
+        while not os.path.exists(f"{DATA_FOLDER}/signaling_server/pid"):
             print(".", end="")
             time.sleep(1)
         print("done")

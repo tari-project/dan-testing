@@ -1,4 +1,6 @@
 import sqlite3
+from config import DATA_FOLDER
+
 
 def copy_data(source_db, destination_db, source_name):
     # Connect to the source database
@@ -57,4 +59,4 @@ def copy_data(source_db, destination_db, source_name):
 
 num_vns = 8
 for i in range(num_vns):
-    copy_data(f"vn_{i}/localnet/data/validator_node/state.db", "stdout/all.db", f"vn_{i}")
+    copy_data(f"{DATA_FOLDER}/vn_{i}/localnet/data/validator_node/state.db", f"{DATA_FOLDER}/stdout/all.db", f"vn_{i}")
