@@ -1,5 +1,5 @@
 # type:ignore
-from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT
+from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
 import base64
 import os
 import requests
@@ -57,19 +57,22 @@ class JrpcDanWalletDaemon:
     def accounts_list(self, offset=0, limit=1):
         return self.call("accounts.list", [offset, limit])
 
-    def transaction_submit_instruction(self, instruction, dump_buckets = True):
+    def transaction_submit_instruction(self, instruction, dump_buckets=True):
         tx_id = 0
         if dump_buckets:
             tx_id = self.call(
                 "transactions.submit_instruction",
-                {"instruction": instruction, "fee_account": self.last_account_name, "dump_outputs_into": self.last_account_name, "fee": 1000},
-
+                {
+                    "instruction": instruction,
+                    "fee_account": self.last_account_name,
+                    "dump_outputs_into": self.last_account_name,
+                    "fee": 1000,
+                },
             )["hash"]
         else:
             tx_id = self.call(
                 "transactions.submit_instruction",
                 {"instruction": instruction, "fee_account": self.last_account_name, "fee": 1000},
-
             )["hash"]
         while True:
             tx = self.transaction_get(tx_id)
@@ -127,7 +130,7 @@ class DanWalletDaemon(CommonExec):
         self.exec = [
             *run,
             "-b",
-            f"dan_wallet_daemon_{dan_wallet_id}",
+            f"{DATA_FOLDER}/dan_wallet_daemon_{dan_wallet_id}",
             "--network",
             "localnet",
             "--listen-addr",
@@ -143,7 +146,7 @@ class DanWalletDaemon(CommonExec):
         jrpc_address = f"http://127.0.0.1:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
         self.http_client = DanWalletUI(self.id, jrpc_address)
-        while not os.path.exists(f"dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
+        while not os.path.exists(f"{DATA_FOLDER}/dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
@@ -164,7 +167,7 @@ class DanWalletUI(CommonExec):
             self.process = SubprocessWrapper.call(
                 ["npm", "install"],
                 stdin=subprocess.PIPE,
-                stdout=open(f"stdout/tari-connector_prepare.log", "a+"),
+                stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
                 stderr=subprocess.STDOUT,
                 cwd="../tari-dan/applications/tari_dan_wallet_web_ui",
             )

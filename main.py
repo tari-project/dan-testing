@@ -5,6 +5,7 @@ from config import (
     BURN_AMOUNT,
     COLOR_RESET,
     CREATE_ACCOUNTS_PER_WALLET,
+    DATA_FOLDER,
     DEFAULT_TEMPLATE_FUNCTION,
     TEMPLATES,
     DELETE_EVERYTHING_BEFORE,
@@ -293,19 +294,24 @@ def wait_for_vns_to_sync():
 
 try:
     if DELETE_EVERYTHING_BEFORE or DELETE_STDOUT_LOGS:
-        for file in os.listdir(os.getcwd()):
-            full_path = os.path.join(os.getcwd(), file)
-            if os.path.isdir(full_path):
-                if DELETE_EVERYTHING_BEFORE:
-                    if re.match(
-                        r"(config|data|base_node|log|peer_db|miner|vn_\d+|wallet|dan_wallet_daemon_\d+|templates|stdout|signaling_server|indexer_\d+)",
-                        file,
-                    ):
-                        shutil.rmtree(full_path)
-                else:
-                    if re.match(r"stdout", file):
-                        shutil.rmtree(full_path)
+        try:
+            shutil.rmtree(DATA_FOLDER)
+        except:
+            pass
+        # for file in os.listdir(os.getcwd()):
+        #     full_path = os.path.join(os.getcwd(), file)
+        #     if os.path.isdir(full_path):
+        #         if DELETE_EVERYTHING_BEFORE:
+        #             if re.match(
+        #                 r"(config|data|base_node|log|peer_db|miner|vn_\d+|wallet|dan_wallet_daemon_\d+|templates|stdout|signaling_server|indexer_\d+)",
+        #                 file,
+        #             ):
+        #                 shutil.rmtree(full_path)
+        #         else:
+        #             if re.match(r"stdout", file):
+        #                 shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
+        print_step("YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
         check_executable("tari_base_node")
         check_executable("tari_console_wallet")
         check_executable("tari_miner")
@@ -316,7 +322,8 @@ try:
         check_executable("tari_validator_node")
         check_executable("tari_validator_node_cli")
     try:
-        os.mkdir("./stdout")
+        os.mkdir(f"./{DATA_FOLDER}")
+        os.mkdir(f"./{DATA_FOLDER}/stdout")
     except:
         pass
 
@@ -324,11 +331,12 @@ try:
     print_step("STARTING HTTP SERVER")
     server = Server()
     server.run()
-    print_step("GENERATING TEMPLATE")
-    # Generate template
-    templates = {}
-    for t in TEMPLATES.split(","):
-        templates[t] = Template(t)
+    templates: dict[str, Template] = {}
+    if STEPS_CREATE_TEMPLATE:
+        print_step("GENERATING TEMPLATE")
+        # Generate template
+        for t in TEMPLATES.split(","):
+            templates[t] = Template(t)
     print_step("STARTING BASE NODE")
     # Start base node
     base_node = BaseNode()
@@ -347,7 +355,6 @@ try:
             base_node.grpc_port, wallet.grpc_port, vn_id, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes]
         )
         validator_nodes[vn_id] = vn
-
     wait_for_vns_to_sync()
 
     print_step("REGISTER THE VNS")
@@ -397,7 +404,7 @@ try:
 
     dan_wallets: dict[int, DanWalletDaemon] = {}
 
-    if SPAWN_INDEXERS == 0 and SPAWN_WALLETS_PER_INDEXER > 0:
+    if SPAWN_INDEXERS == 0 and SPAWN_WALLETS_PER_INDEXER > 0:  # type: ignore
         raise Exception("Can't create a wallet when there is no indexer")
 
     signaling_server_jrpc_port = None
@@ -443,14 +450,15 @@ try:
             threads.add(spawn_wallet, (d_id + indexer_id * SPAWN_WALLETS_PER_INDEXER,))
 
     threads.wait()
-    # Publish template
-    print_step("PUBLISHING TEMPLATE")
-    for t in templates.values():
-        t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
-    miner.mine(4)
+    if STEPS_CREATE_TEMPLATE:
+        # Publish template
+        print_step("PUBLISHING TEMPLATE")
+        for t in templates.values():
+            t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
+        miner.mine(4)
 
-    # Wait for the VNs to pickup the blocks from base layer
-    # TODO wait for VN to download and activate the template
+        # Wait for the VNs to pickup the blocks from base layer
+        # TODO wait for VN to download and activate the template
     wait_for_vns_to_sync()
 
     if STEPS_CREATE_ACCOUNT:
@@ -555,7 +563,7 @@ if "signaling_server" in locals():
     del signaling_server
 if "DanWallets" in locals():
     del dan_wallets
-if "indexer" in locals():
+if "indexers" in locals():
     del indexers
 if "VNs" in locals():
     del validator_nodes

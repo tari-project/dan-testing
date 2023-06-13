@@ -1,10 +1,13 @@
+import os
+
+DATA_FOLDER = "Data"
 DELETE_EVERYTHING_BEFORE = True
 DELETE_STDOUT_LOGS = True
 REDIRECT_BASE_NODE_STDOUT = False
 REDIRECT_WALLET_STDOUT = True
 REDIRECT_MINER_STDOUT = True
 # how many VNs should print to console
-REDIRECT_VN_FROM_INDEX_STDOUT = 1
+REDIRECT_VN_FROM_INDEX_STDOUT = 0
 # how many dan wallets should print to console
 REDIRECT_DAN_WALLET_STDOUT = 0
 # The register vn cli is redirected as VN, this is for the publish template etc.
@@ -24,10 +27,11 @@ TEMPLATES = "fungible,swap"
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
 # use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
-DEFAULT_TEMPLATE_FUNCTION = "fungible::mint=Amount(1000000),\"token1\"|fungible::mint=Amount(2000),\"token2\""
+DEFAULT_TEMPLATE_FUNCTION = 'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"'
 BURN_AMOUNT = 1000000
 NO_FEES = True
-USE_BINARY_EXECUTABLE = False
+
+USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
 STEPS_CREATE_ACCOUNT = True
 STEPS_CREATE_TEMPLATE = True
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = True

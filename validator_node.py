@@ -1,7 +1,7 @@
 # type:ignore
 
 from ports import ports
-from config import NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE
+from config import NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
@@ -51,7 +51,7 @@ class ValidatorNode(CommonExec):
         self.exec = [
             *run,
             "-b",
-            f"vn_{node_id}",
+            f"{DATA_FOLDER}/vn_{node_id}",
             "--network",
             NETWORK,
             "-p",
@@ -79,7 +79,7 @@ class ValidatorNode(CommonExec):
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
         print("Waiting for VN to start.", end="")
-        while not os.path.exists(f"vn_{node_id}/localnet/pid"):
+        while not os.path.exists(f"{DATA_FOLDER}/vn_{node_id}/localnet/pid"):
             print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
@@ -89,7 +89,7 @@ class ValidatorNode(CommonExec):
         self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
 
     def get_address(self) -> str:
-        validator_node_id_file_name = f"./vn_{self.id}/{NETWORK}/validator_node_id.json"
+        validator_node_id_file_name = f"./{DATA_FOLDER}/vn_{self.id}/{NETWORK}/validator_node_id.json"
         while not os.path.exists(validator_node_id_file_name):
             time.sleep(1)
         f = open(validator_node_id_file_name, "rt")
@@ -108,7 +108,7 @@ class ValidatorNode(CommonExec):
         self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/127.0.0.1/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(
-                self.exec_cli, stdout=open(f"stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT
+                self.exec_cli, stdout=open(f"{DATA_FOLDER}/stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT
             )
         else:
             self.cli_process = SubprocessWrapper.call(self.exec_cli)

@@ -9,7 +9,7 @@ except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
-from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE
+from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from typing import Any
 from common_exec import CommonExec
 import time
@@ -51,7 +51,7 @@ class Wallet(CommonExec):
         self.exec = [
             *run,
             "-b",
-            "wallet",
+            f"{DATA_FOLDER}/wallet",
             "-n",
             "--network",
             NETWORK,

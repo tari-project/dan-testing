@@ -9,7 +9,7 @@ except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
-from config import NETWORK, REDIRECT_BASE_NODE_STDOUT, USE_BINARY_EXECUTABLE
+from config import NETWORK, REDIRECT_BASE_NODE_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import os
 import re
 import time
@@ -64,7 +64,7 @@ class BaseNode(CommonExec):
         self.exec = [
             *run,
             "-b",
-            "base_node",
+            f"{DATA_FOLDER}/base_node",
             "-n",
             "--network",
             NETWORK,
@@ -97,7 +97,7 @@ class BaseNode(CommonExec):
             time.sleep(1)
 
     def get_address(self):
-        base_node_id_file_name = f"./base_node/{NETWORK}/config/base_node_id.json"
+        base_node_id_file_name = f"./{DATA_FOLDER}/base_node/{NETWORK}/config/base_node_id.json"
         while not os.path.exists(base_node_id_file_name):
             time.sleep(1)
         f = open(base_node_id_file_name, "rt")

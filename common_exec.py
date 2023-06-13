@@ -4,7 +4,7 @@ from subprocess_wrapper import SubprocessWrapper
 import subprocess
 from ports import ports
 from typing import Optional, Any
-from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR
+from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import psutil
 
 
@@ -39,7 +39,7 @@ class CommonExec:
             self.process = SubprocessWrapper.Popen(
                 self.exec,
                 stdin=subprocess.PIPE,
-                stdout=open(f"stdout/{self.name}.log", "a+"),
+                stdout=open(f"{DATA_FOLDER}/stdout/{self.name}.log", "a+"),
                 stderr=subprocess.STDOUT,
                 env={**env, **self.env},
                 cwd=cwd,
