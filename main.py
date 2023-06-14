@@ -263,7 +263,7 @@ def stress_test():
 
 
 def print_step(step_name: str):
-    print(f"{STEP_OUTER_COLOR}### {STEP_COLOR}{step_name} {STEP_OUTER_COLOR}###{COLOR_RESET}")
+    print(f"{STEP_OUTER_COLOR}### {STEP_COLOR}{step_name.upper()} {STEP_OUTER_COLOR}###{COLOR_RESET}")
 
 
 def check_executable(file_name: str):
@@ -305,7 +305,7 @@ try:
                     if re.match(r"stdout", file):
                         shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
-        print_step("YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
+        print_step("!!! YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
         check_executable("tari_base_node")
         check_executable("tari_console_wallet")
         check_executable("tari_miner")
