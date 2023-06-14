@@ -1,4 +1,5 @@
 # type:ignore
+from config import DATA_FOLDER
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from ports import ports
 import threading
@@ -15,7 +16,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(f.read())
 
     def do_GET(self):
-        file_path = self.path[1:]
+        file_path = os.path.join(DATA_FOLDER, self.path[1:])
         if os.path.isfile(file_path):
             self._send_response(file_path)
         else:
