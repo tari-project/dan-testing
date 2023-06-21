@@ -52,10 +52,10 @@ class GrpcBaseNode:
 
 
 class BaseNode(CommonExec):
-    def __init__(self):
+    def __init__(self, local_ip):
         super().__init__("Base_node")
         self.public_port = self.get_port("public_address")
-        self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
+        self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_base_node"]
@@ -75,7 +75,7 @@ class BaseNode(CommonExec):
             "-p",
             f"base_node.p2p.public_addresses={self.public_address}",
             "-p",
-            f"base_node.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
+            f"base_node.grpc_address=/ip4/{local_ip}/tcp/{self.grpc_port}",
             "-p",
             f"base_node.grpc_enabled=true",
             "-p",
@@ -89,7 +89,7 @@ class BaseNode(CommonExec):
         # Sometimes it takes a while to establish the grpc connection
         while True:
             try:
-                self.grpc_client = GrpcBaseNode(f"127.0.0.1:{self.grpc_port}")
+                self.grpc_client = GrpcBaseNode(f"{local_ip}:{self.grpc_port}")
                 self.grpc_client.get_version()
                 break
             except:

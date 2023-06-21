@@ -36,14 +36,14 @@ class JrpcValidatorNode:
 
 
 class ValidatorNode(CommonExec):
-    def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):
+    def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, local_ip, peers=[]):
         super().__init__("Validator_node", node_id)
         self.public_port = self.get_port("public_address")
-        self.public_adress = f"/ip4/127.0.0.1/tcp/{self.public_port}"
+        self.public_adress = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
-        self.json_rpc_address = f"127.0.0.1:{self.json_rpc_port}"
+        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
-        self.http_ui_address = f"127.0.0.1:{self.http_port}"
+        self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_validator_node"]
         else:
@@ -55,9 +55,9 @@ class ValidatorNode(CommonExec):
             "--network",
             NETWORK,
             "-p",
-            f"validator_node.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
+            f"validator_node.base_node_grpc_address={local_ip}:{base_node_grpc_port}",
             "-p",
-            f"validator_node.wallet_grpc_address=127.0.0.1:{wallet_grpc_port}",
+            f"validator_node.wallet_grpc_address={local_ip}:{wallet_grpc_port}",
             "-p",
             "validator_node.p2p.transport.type=tcp",
             "-p",
@@ -86,7 +86,7 @@ class ValidatorNode(CommonExec):
             else:
                 raise Exception(f"Validator node did not start successfully: Exit code:{self.process.poll()}")
         print("done")
-        self.jrpc_client = JrpcValidatorNode(f"http://127.0.0.1:{self.json_rpc_port}")
+        self.jrpc_client = JrpcValidatorNode(f"http://{local_ip}:{self.json_rpc_port}")
 
     def get_address(self) -> str:
         validator_node_id_file_name = f"./{DATA_FOLDER}/vn_{self.id}/{NETWORK}/validator_node_id.json"
@@ -100,12 +100,12 @@ class ValidatorNode(CommonExec):
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
 
-    def register(self):
+    def register(self, local_ip: str):
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_validator_node_cli"]
         else:
             run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
-        self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/127.0.0.1/tcp/{self.json_rpc_port}", "vn", "register"]
+        self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/{local_ip}/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(
                 self.exec_cli, stdout=open(f"{DATA_FOLDER}/stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT

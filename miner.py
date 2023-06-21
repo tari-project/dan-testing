@@ -6,7 +6,7 @@ import subprocess
 
 
 class Miner:
-    def __init__(self, base_node_grpc_port, wallet_grpc_port):
+    def __init__(self, base_node_grpc_port, wallet_grpc_port, local_ip):
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_miner"]
         else:
@@ -20,9 +20,9 @@ class Miner:
             "--max-blocks",
             "#blocks",
             "-p",
-            f"miner.base_node_grpc_address=/ip4/127.0.0.1/tcp/{base_node_grpc_port}",
+            f"miner.base_node_grpc_address=/ip4/{local_ip}/tcp/{base_node_grpc_port}",
             "-p",
-            f"miner.wallet_grpc_address=/ip4/127.0.0.1/tcp/{wallet_grpc_port}",
+            f"miner.wallet_grpc_address=/ip4/{local_ip}/tcp/{wallet_grpc_port}",
             "-p",
             f"miner.num_mining_threads=1",
         ]

@@ -7,9 +7,9 @@ from config import (
     CREATE_ACCOUNTS_PER_WALLET,
     DATA_FOLDER,
     DEFAULT_TEMPLATE_FUNCTION,
-    TEMPLATES,
     DELETE_EVERYTHING_BEFORE,
     DELETE_STDOUT_LOGS,
+    LISTEN_ONLY_ON_LOCALHOST,
     SPAWN_INDEXERS,
     SPAWN_VNS,
     SPAWN_WALLETS_PER_INDEXER,
@@ -20,6 +20,7 @@ from config import (
     STEPS_RUN_SIGNALLING_SERVER,
     STEPS_RUN_TARI_CONNECTOR_TEST_SITE,
     STRESS_TEST,
+    TEMPLATES,
     USE_BINARY_EXECUTABLE,
 )
 from dan_wallet_daemon import DanWalletDaemon
@@ -38,9 +39,24 @@ import json
 import os
 import re
 import shutil
+import socket
 import time
 import traceback
 import webbrowser
+
+local_ip = "127.0.0.1"
+if not LISTEN_ONLY_ON_LOCALHOST:
+    temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        temp_socket.connect(("10.255.255.255", 1))
+        local_ip = temp_socket.getsockname()[0]
+    except socket.error:
+        local_ip = "127.0.0.1"
+        exit()
+    finally:
+        temp_socket.close()
+
+print(local_ip)
 
 
 def cli_loop():
@@ -230,7 +246,7 @@ def cli_loop():
 def stress_test():
     global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server
 
-    num_of_tx = 1  # this is how many times we send the funds back and forth for each of two wallets
+    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
 
     def send_tx(src_id: int, dst_id: int):
         src_account = dan_wallets[src_id].jrpc_client.accounts_list()[("accounts")][0]
@@ -240,10 +256,10 @@ def stress_test():
         dst_public_key = dst_account["public_key"]
         for i in range(num_of_tx):
             print(f"tx {src_id} -> {dst_id} ({i})")
-            # dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
-            # dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
+            dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
+            dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
             dan_wallets[src_id].jrpc_client.transfer(src_account, 1, res_addr, dst_public_key, 1)
-            # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
+            dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
 
     # We will send back and forth between two wallets. So with n*2 wallets we have n concurrent TXs
     start = time.time()
@@ -339,12 +355,12 @@ try:
             templates[t] = Template(t)
     print_step("STARTING BASE NODE")
     # Start base node
-    base_node = BaseNode()
+    base_node = BaseNode(local_ip)
     print_step("STARTING WALLET")
     # Start wallet
-    wallet = Wallet(base_node.get_address())
+    wallet = Wallet(base_node.get_address(), local_ip)
     # Set ports for miner
-    miner = Miner(base_node.grpc_port, wallet.grpc_port)
+    miner = Miner(base_node.grpc_port, wallet.grpc_port, local_ip)
     # Mine some blocks
     miner.mine((SPAWN_VNS + SPAWN_INDEXERS * SPAWN_WALLETS_PER_INDEXER) * 2 + 13)  # Make sure we have enough funds
     # Start VNs
@@ -352,7 +368,7 @@ try:
     validator_nodes: dict[int, ValidatorNode] = {}
     for vn_id in range(SPAWN_VNS):
         vn = ValidatorNode(
-            base_node.grpc_port, wallet.grpc_port, vn_id, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes]
+            base_node.grpc_port, wallet.grpc_port, vn_id, local_ip, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes]
         )
         validator_nodes[vn_id] = vn
     wait_for_vns_to_sync()
@@ -360,7 +376,7 @@ try:
     print_step("REGISTER THE VNS")
     # Register VNs
     for vn_id in validator_nodes:
-        validator_nodes[vn_id].register()
+        validator_nodes[vn_id].register(local_ip)
         # Uncomment next line if you want to have only one registeration per block
         # miner.mine(1)
 
@@ -384,7 +400,7 @@ try:
         print_step("STARTING INDEXERS")
 
         def spawn_indexer(id: int):
-            indexers[id] = Indexer(id, base_node.grpc_port, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes])
+            indexers[id] = Indexer(id, base_node.grpc_port, local_ip, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes])
             time.sleep(1)
             # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
             # to start comms
@@ -410,12 +426,12 @@ try:
     signaling_server_jrpc_port = None
     if STEPS_RUN_SIGNALLING_SERVER:
         print_step("Starting signalling server")
-        signaling_server = SignalingServer()
+        signaling_server = SignalingServer(local_ip)
         signaling_server_jrpc_port = signaling_server.json_rpc_port
     print_step("CREATING DAN WALLETS DAEMONS")
 
     def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
-        dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer_jrpc, signaling_server_jrpc)
+        dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer_jrpc, signaling_server_jrpc, local_ip)
 
     for indexer_id in range(SPAWN_INDEXERS):
         for dwallet_id in range(SPAWN_WALLETS_PER_INDEXER):
@@ -454,7 +470,7 @@ try:
         # Publish template
         print_step("PUBLISHING TEMPLATE")
         for t in templates.values():
-            t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port)
+            t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port, local_ip)
         miner.mine(4)
 
         # Wait for the VNs to pickup the blocks from base layer
@@ -465,7 +481,7 @@ try:
         print_step("CREATING ACCOUNTS")
         start = time.time()
 
-        def create_account(id: int, amount: int):
+        def create_account(i: int, id: int, amount: int):
             name = {"Name": f"TestAccount_{i+id*CREATE_ACCOUNTS_PER_WALLET}"}
             dan_wallet_jrpc = dan_wallets[id].jrpc_client
             print(f"Account {name} creation started")
@@ -474,7 +490,7 @@ try:
 
         for i in range(CREATE_ACCOUNTS_PER_WALLET):
             for id in dan_wallets:
-                threads.add(create_account, (id, 12345))
+                threads.add(create_account, (i, id, 12345))
         threads.wait()
 
         # burns = {}
@@ -546,7 +562,7 @@ try:
             print("Starting tari-connector test without signaling server is pointless!")
         else:
             print_step("Starting tari-connector test website")
-            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://127.0.0.1:{signaling_server.json_rpc_port}")
+            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
     if STRESS_TEST:
         stress_test()
     print(stats)
