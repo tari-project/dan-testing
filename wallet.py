@@ -39,10 +39,10 @@ class GrpcWallet:
 
 
 class Wallet(CommonExec):
-    def __init__(self, base_node_address):
+    def __init__(self, base_node_address, local_ip):
         super().__init__("Wallet")
         self.public_port = self.get_port("public_address")
-        self.public_address = f"/ip4/127.0.0.1/tcp/{self.public_port}"
+        self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_console_wallet"]
@@ -63,7 +63,7 @@ class Wallet(CommonExec):
             "-p",
             f"wallet.custom_base_node={base_node_address}",
             "-p",
-            f"wallet.grpc_address=/ip4/127.0.0.1/tcp/{self.grpc_port}",
+            f"wallet.grpc_address=/ip4/{local_ip}/tcp/{self.grpc_port}",
             "-p",
             f"wallet.p2p.transport.tcp.listener_address={self.public_address}",
             "-p",
@@ -77,7 +77,7 @@ class Wallet(CommonExec):
         # Sometimes it takes a while to establish the grpc connection
         while True:
             try:
-                self.grpc_client = GrpcWallet(f"127.0.0.1:{self.grpc_port}")
+                self.grpc_client = GrpcWallet(f"{local_ip}:{self.grpc_port}")
                 self.grpc_client.get_version()
                 break
             except:

@@ -3,6 +3,7 @@ from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_D
 import base64
 import os
 import requests
+import socket
 import time
 from typing import Any
 from common_exec import CommonExec
@@ -120,7 +121,7 @@ class JrpcDanWalletDaemon:
 
 
 class DanWalletDaemon(CommonExec):
-    def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int):
+    def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int, local_ip: str):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
         if USE_BINARY_EXECUTABLE:
@@ -134,16 +135,16 @@ class DanWalletDaemon(CommonExec):
             "--network",
             "localnet",
             "--listen-addr",
-            f"127.0.0.1:{self.json_rpc_port}",
+            f"{local_ip}:{self.json_rpc_port}",
             "--indexer_url",
-            f"http://127.0.0.1:{indexer_jrpc_port}/json_rpc",
+            f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
         ]
         if signaling_server_port:
-            self.exec = [*self.exec, "--signaling_server_address", f"127.0.0.1:{signaling_server_port}"]
+            self.exec = [*self.exec, "--signaling_server_address", f"{local_ip}:{signaling_server_port}"]
         self.run(REDIRECT_DAN_WALLET_STDOUT)
 
         # (out, err) = self.process.communicate()
-        jrpc_address = f"http://127.0.0.1:{self.json_rpc_port}"
+        jrpc_address = f"http://{local_ip}:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
         self.http_client = DanWalletUI(self.id, jrpc_address)
         while not os.path.exists(f"{DATA_FOLDER}/dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):

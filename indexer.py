@@ -11,15 +11,15 @@ from common_exec import CommonExec
 
 
 class Indexer(CommonExec):
-    def __init__(self, indexer_id: int, base_node_grpc_port: int, peers=[]):
+    def __init__(self, indexer_id: int, base_node_grpc_port: int, local_ip, peers=[]):
         super().__init__("Indexer", indexer_id)
         self.id = indexer_id
         self.public_port = self.get_port("public_address")
-        self.public_adress = f"/ip4/127.0.0.1/tcp/{self.public_port}"
+        self.public_adress = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
-        self.json_rpc_address = f"127.0.0.1:{self.json_rpc_port}"
+        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
-        self.http_ui_address = f"127.0.0.1:{self.http_port}"
+        self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_indexer"]
         else:
@@ -39,7 +39,7 @@ class Indexer(CommonExec):
             "--network",
             NETWORK,
             "-p",
-            f"indexer.base_node_grpc_address=127.0.0.1:{base_node_grpc_port}",
+            f"indexer.base_node_grpc_address={local_ip}:{base_node_grpc_port}",
             "-p",
             "indexer.p2p.transport.type=tcp",
             "-p",

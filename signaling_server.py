@@ -6,7 +6,7 @@ from common_exec import CommonExec
 
 
 class SignalingServer(CommonExec):
-    def __init__(self):
+    def __init__(self, local_ip):
         super().__init__("Signaling_server")
         self.json_rpc_port = self.get_port("JRPC")
         if USE_BINARY_EXECUTABLE:
@@ -18,7 +18,7 @@ class SignalingServer(CommonExec):
             "-b",
             f"{DATA_FOLDER}/signaling_server",
             "--listen-addr",
-            f"127.0.0.1:{self.json_rpc_port}",
+            f"{local_ip}:{self.json_rpc_port}",
         ]
         self.run(REDIRECT_SIGNALING_STDOUT)
         print("Waiting for signaling server to start.", end="")

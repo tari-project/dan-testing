@@ -48,7 +48,7 @@ class Template:
             SubprocessWrapper.call(exec)
         os.chdir(wd)
 
-    def publish_template(self, jrpc_port: int, server_port: int):
+    def publish_template(self, jrpc_port: int, server_port: int, local_ip):
         if USE_BINARY_EXECUTABLE:
             run = ["./tari_validator_node_cli"]
         else:
@@ -57,7 +57,7 @@ class Template:
         exec = [
             *run,
             "--vn-daemon-jrpc-endpoint",
-            f"/ip4/127.0.0.1/tcp/{jrpc_port}",
+            f"/ip4/{local_ip}/tcp/{jrpc_port}",
             "templates",
             "publish",
             "--binary-url",
