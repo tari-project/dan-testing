@@ -7,7 +7,9 @@ from config import (
     CREATE_ACCOUNTS_PER_WALLET,
     DATA_FOLDER,
     DEFAULT_TEMPLATE_FUNCTION,
-    DELETE_EVERYTHING_BEFORE,
+    TEMPLATES,
+    DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE,
+    DELETE_TEMPLATES,
     DELETE_STDOUT_LOGS,
     LISTEN_ONLY_ON_LOCALHOST,
     SPAWN_INDEXERS,
@@ -278,7 +280,7 @@ def stress_test():
 
 
 def print_step(step_name: str):
-    print(f"{STEP_OUTER_COLOR}### {STEP_COLOR}{step_name} {STEP_OUTER_COLOR}###{COLOR_RESET}")
+    print(f"{STEP_OUTER_COLOR}### {STEP_COLOR}{step_name.upper()} {STEP_OUTER_COLOR}###{COLOR_RESET}")
 
 
 def check_executable(file_name: str):
@@ -309,25 +311,18 @@ def wait_for_vns_to_sync():
 
 
 try:
-    if DELETE_EVERYTHING_BEFORE or DELETE_STDOUT_LOGS:
-        try:
-            shutil.rmtree(DATA_FOLDER)
-        except:
-            pass
-        # for file in os.listdir(os.getcwd()):
-        #     full_path = os.path.join(os.getcwd(), file)
-        #     if os.path.isdir(full_path):
-        #         if DELETE_EVERYTHING_BEFORE:
-        #             if re.match(
-        #                 r"(config|data|base_node|log|peer_db|miner|vn_\d+|wallet|dan_wallet_daemon_\d+|templates|stdout|signaling_server|indexer_\d+)",
-        #                 file,
-        #             ):
-        #                 shutil.rmtree(full_path)
-        #         else:
-        #             if re.match(r"stdout", file):
-        #                 shutil.rmtree(full_path)
+    if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE or DELETE_STDOUT_LOGS:
+        for file in os.listdir(os.path.join(os.getcwd(), DATA_FOLDER)):
+            full_path = os.path.join(os.getcwd(), DATA_FOLDER, file)
+            if os.path.isdir(full_path):
+                if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE:
+                    if file != "templates" or DELETE_TEMPLATES:
+                        shutil.rmtree(full_path)
+                else:
+                    if re.match(r"stdout", file):
+                        shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
-        print_step("YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
+        print_step("!!! YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
         check_executable("tari_base_node")
         check_executable("tari_console_wallet")
         check_executable("tari_miner")
@@ -339,6 +334,9 @@ try:
         check_executable("tari_validator_node_cli")
     try:
         os.mkdir(f"./{DATA_FOLDER}")
+    except:
+        pass
+    try:
         os.mkdir(f"./{DATA_FOLDER}/stdout")
     except:
         pass

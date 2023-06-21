@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="spawn_vns_tests",
+    name="Dan Testing",
     version="1.0.0",
     description="Spawn VNs to test DAN layer",
     author="Your Name",
@@ -10,7 +10,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "grpcio-tools",
-        "requests"
+        "requests",
+        "psutil"
         # Add more dependencies here
     ],
 )

@@ -15,3 +15,6 @@ vn*
 wallet
 Data
 *.exe
+build
+*.egg-info
+*.egg
