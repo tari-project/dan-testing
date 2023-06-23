@@ -46,6 +46,10 @@ import time
 import traceback
 import webbrowser
 
+validator_nodes: dict[int, ValidatorNode] = {}
+indexers: dict[int, Indexer] = {}
+dan_wallets: dict[int, DanWalletDaemon] = {}
+
 local_ip = "127.0.0.1"
 if not LISTEN_ONLY_ON_LOCALHOST:
     temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -91,7 +95,7 @@ def cli_loop():
                     print("All indices are zero based")
                 elif command.startswith("burn"):
                     public_key = command.split()[1]
-                    public_key = bytes(int(public_key[i : i + 2], 16) for i in range(0, len(public_key), 2))
+                    public_key = bytes([int(public_key[i : i + 2], 16) for i in range(0, len(public_key), 2)])
                     print_step(f"BURNING {BURN_AMOUNT}")
                     burn = wallet.grpc_client.burn(BURN_AMOUNT, public_key)
                     os.mkdir("output")
@@ -119,13 +123,10 @@ def cli_loop():
                     miner.mine(blocks)  # Mine the register TXs
                 elif command.startswith("grpc"):
                     what = command.split()[1]
-                    match what:
-                        case "node":
-                            print(base_node.grpc_port)
-                        case "wallet":
-                            print(wallet.grpc_port)
-                        case _:
-                            pass
+                    if what == "node":
+                        print(base_node.grpc_port)
+                    elif what == "wallet":
+                        print(wallet.grpc_port)
                 elif command.startswith("jrpc vn"):
                     if r := re.match(r"jrpc vn (\d+)", command):
                         vn_id = int(r.group(1))
@@ -184,38 +185,37 @@ def cli_loop():
                         print("Invalid http request")
                 elif command.startswith("kill"):
                     what = command.split(maxsplit=1)[1]
-                    match what:
-                        case "node":
-                            if base_node:
-                                print(f'To run base node : {" ".join(base_node.exec).replace("-n ", "")}')
-                                del base_node
-                        case "wallet":
-                            if wallet:
-                                print(f'To run the wallet : {" ".join(wallet.exec).replace("-n ", "")}')
-                                del wallet
-                        case _:
-                            # This should be 'VN <id>'
-                            if r := re.match(r"vn (\d+)", what):
-                                vn_id = int(r.group(1))
-                                if vn_id in validator_nodes:
-                                    del validator_nodes[vn_id]
-                                else:
-                                    print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
-                            elif r := re.match(r"dan (\d+)", what):
-                                dan_id = int(r.group(1))
-                                if dan_id in dan_wallets:
-                                    del dan_wallets[dan_id]
-                                else:
-                                    print(f"DanWallet id ({dan_id}) is invalid, either it never existed or you already killed it")
-                            elif r := re.match(r"indexer (\d+)", what):
-                                indexer_id = int(r.group(1))
-                                if indexer_id in indexers:
-                                    del indexers[indexer_id]
-                                else:
-                                    print(f"Indexer id ({dan_id}) is invalid, either it never existed or you already killed it")
+                    if what == "node":
+                        if base_node:
+                            print(f'To run base node : {" ".join(base_node.exec).replace("-n ", "")}')
+                            del base_node
+                    elif what == "wallet":
+                        if wallet:
+                            print(f'To run the wallet : {" ".join(wallet.exec).replace("-n ", "")}')
+                            del wallet
+                    else:
+                        # This should be 'VN <id>'
+                        if r := re.match(r"vn (\d+)", what):
+                            vn_id = int(r.group(1))
+                            if vn_id in validator_nodes:
+                                del validator_nodes[vn_id]
                             else:
-                                print("Invalid kill command", command)
-                            # which = what.split()
+                                print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
+                        elif r := re.match(r"dan (\d+)", what):
+                            dan_id = int(r.group(1))
+                            if dan_id in dan_wallets:
+                                del dan_wallets[dan_id]
+                            else:
+                                print(f"DanWallet id ({dan_id}) is invalid, either it never existed or you already killed it")
+                        elif r := re.match(r"indexer (\d+)", what):
+                            indexer_id = int(r.group(1))
+                            if indexer_id in indexers:
+                                del indexers[indexer_id]
+                            else:
+                                print(f"Indexer id ({dan_id}) is invalid, either it never existed or you already killed it")
+                        else:
+                            print("Invalid kill command", command)
+                        # which = what.split()
                 elif command == "live":
                     if "base_node" in locals():
                         print("Base node is running")
@@ -363,7 +363,6 @@ try:
     miner.mine((SPAWN_VNS + SPAWN_INDEXERS * SPAWN_WALLETS_PER_INDEXER) * 2 + 13)  # Make sure we have enough funds
     # Start VNs
     print_step("CREATING VNS")
-    validator_nodes: dict[int, ValidatorNode] = {}
     for vn_id in range(SPAWN_VNS):
         vn = ValidatorNode(
             base_node.grpc_port, wallet.grpc_port, vn_id, local_ip, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes]
@@ -393,7 +392,6 @@ try:
     miner.mine(20)  # Mine the register TXs
     time.sleep(1)
 
-    indexers: dict[int, Indexer] = {}
     if SPAWN_INDEXERS > 0:
         print_step("STARTING INDEXERS")
 
@@ -415,8 +413,6 @@ try:
         # comms_stats = indexer.jrpc_client.get_comms_stats()
         # print(connections)
         # print(comms_stats)
-
-    dan_wallets: dict[int, DanWalletDaemon] = {}
 
     if SPAWN_INDEXERS == 0 and SPAWN_WALLETS_PER_INDEXER > 0:  # type: ignore
         raise Exception("Can't create a wallet when there is no indexer")

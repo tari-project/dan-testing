@@ -3,7 +3,7 @@ import signal
 from subprocess_wrapper import SubprocessWrapper
 import subprocess
 from ports import ports
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import psutil
 
@@ -33,7 +33,7 @@ class CommonExec:
     def get_port(self, interface: str) -> int:
         return ports.get_free_port(f"{self.name} {interface}")
 
-    def run(self, redirect: bool | int, cwd: Optional[str] = None):
+    def run(self, redirect: Union[bool, int], cwd: Optional[str] = None):
         env: dict[str, str] = os.environ.copy()
         if (self.id is not None and self.id >= redirect) or (not self.id and redirect):
             self.process = SubprocessWrapper.Popen(

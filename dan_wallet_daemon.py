@@ -5,7 +5,7 @@ import os
 import requests
 import socket
 import time
-from typing import Any
+from typing import Any, Union
 from common_exec import CommonExec
 from stats import stats
 from subprocess_wrapper import SubprocessWrapper
@@ -41,14 +41,14 @@ class JrpcDanWalletDaemon:
     def keys_list(self):
         return self.call("keys.list")
 
-    def accounts_create(self, name: str, custom_access_rules: Any = None, fee: int | None = None, is_default: bool = True):
+    def accounts_create(self, name: str, custom_access_rules: Any = None, fee: Union[int, None] = None, is_default: bool = True):
         id = stats.start_run("accounts.create")
         res = self.call("accounts.create", [name, custom_access_rules, fee, is_default])
         self.last_account_name = name
         stats.end_run(id)
         return res
 
-    def create_free_test_coins(self, account: Any, amount: int, fee: int | None = None):
+    def create_free_test_coins(self, account: Any, amount: int, fee: Union[int, None] = None):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call("accounts.create_free_test_coins", [account, amount, fee])
         self.last_account_name = account
@@ -105,19 +105,22 @@ class JrpcDanWalletDaemon:
     def get_balances(self, account: Any):
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
-    def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
+    def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Union[int, None]):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
         stats.end_run(id)
         return res
 
-    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: int | None):
+    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Union[int, None]):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call(
             "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
         )
         stats.end_run(id)
         return res
+
+    def get_all_tx_by_status(self, status: str):
+        return self.call("transactions.get_all_by_status", [status])
 
 
 class DanWalletDaemon(CommonExec):
