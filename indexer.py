@@ -1,6 +1,6 @@
 # type:ignore
 
-from config import NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from ports import ports
 import os
 import time
@@ -21,7 +21,7 @@ class Indexer(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_indexer"]
+            run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_indexer")]
         else:
             run = [
                 "cargo",
@@ -29,13 +29,13 @@ class Indexer(CommonExec):
                 "--bin",
                 "tari_indexer",
                 "--manifest-path",
-                "../tari-dan/Cargo.toml",
+                os.path.join("..", "tari-dan", "Cargo.toml"),
                 "--",
             ]
         self.exec = [
             *run,
             "-b",
-            f"{DATA_FOLDER}/indexer_{self.id}",
+            os.path.join(DATA_FOLDER, f"indexer_{self.id}"),
             "--network",
             NETWORK,
             "-p",
@@ -57,7 +57,7 @@ class Indexer(CommonExec):
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
-        while not os.path.exists(f"{DATA_FOLDER}/indexer_{self.id}/localnet/pid"):
+        while not os.path.exists(os.path.join(DATA_FOLDER, f"indexer_{self.id}", "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
@@ -66,9 +66,9 @@ class Indexer(CommonExec):
 
     def get_address(self):
         if NETWORK == "localnet":
-            indexer_id_file_name = f"./indexer_{self.id}/indexer_id.json"
+            indexer_id_file_name = os.path.join(DATA_FOLDER, f"indexer_{self.id}", "indexer_id.json")
         else:
-            indexer_id_file_name = f"./indexer_{self.id}/indexer_id_{NETWORK}.json"
+            indexer_id_file_name = os.path.join(DATA_FOLDER, f"indexer_{self.id}", f"indexer_id_{NETWORK}.json")
         while not os.path.exists(indexer_id_file_name):
             time.sleep(1)
         f = open(indexer_id_file_name, "rt")

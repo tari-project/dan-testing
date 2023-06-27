@@ -2,12 +2,13 @@
 
 from base_node import BaseNode
 from config import (
+    TARI_BINS_FOLDER,
+    TARI_DAN_BINS_FOLDER,
     BURN_AMOUNT,
     COLOR_RESET,
     CREATE_ACCOUNTS_PER_WALLET,
     DATA_FOLDER,
     DEFAULT_TEMPLATE_FUNCTION,
-    TEMPLATES,
     DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE,
     DELETE_TEMPLATES,
     DELETE_STDOUT_LOGS,
@@ -160,7 +161,7 @@ def cli_loop():
                         if r := re.match(r"http dan (\d+)", command):
                             dan_id = int(r.group(1))
                             if dan_id in dan_wallets:
-                                url = f"http://localhost:{dan_wallets[dan_id].http_client.http_port}"
+                                url = f"http://{dan_wallets[dan_id].http_ui_address}"
                                 print(url)
                                 webbrowser.open(url)
                             else:
@@ -283,9 +284,9 @@ def print_step(step_name: str):
     print(f"{STEP_OUTER_COLOR}### {STEP_COLOR}{step_name.upper()} {STEP_OUTER_COLOR}###{COLOR_RESET}")
 
 
-def check_executable(file_name: str):
-    if not os.path.exists(f"./{file_name}") and not os.path.exists(f"./{file_name}.exe"):
-        print(f"Copy {file_name} executable in here")
+def check_executable(bins_folder: str, file_name: str):
+    if not os.path.exists(os.path.join(bins_folder, file_name)) and not os.path.exists(os.path.join(bins_folder, f"{file_name}.exe")):
+        print(f"Copy {file_name} executable to '{bins_folder}' here")
         exit()
 
 
@@ -323,21 +324,21 @@ try:
                         shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
         print_step("!!! YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
-        check_executable("tari_base_node")
-        check_executable("tari_console_wallet")
-        check_executable("tari_miner")
-        check_executable("tari_indexer")
-        check_executable("tari_dan_wallet_daemon")
-        check_executable("tari_dan_wallet_cli")
-        check_executable("tari_signaling_server")
-        check_executable("tari_validator_node")
-        check_executable("tari_validator_node_cli")
+        check_executable(TARI_BINS_FOLDER, "tari_base_node")
+        check_executable(TARI_BINS_FOLDER, "tari_console_wallet")
+        check_executable(TARI_BINS_FOLDER, "tari_miner")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_indexer")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_daemon")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_cli")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_signaling_server")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_validator_node")
+        check_executable(TARI_DAN_BINS_FOLDER, "tari_validator_node_cli")
     try:
-        os.mkdir(f"./{DATA_FOLDER}")
+        os.mkdir(DATA_FOLDER)
     except:
         pass
     try:
-        os.mkdir(f"./{DATA_FOLDER}/stdout")
+        os.mkdir(os.path.join(DATA_FOLDER, "stdout"))
     except:
         pass
 
@@ -373,6 +374,11 @@ try:
     print_step("REGISTER THE VNS")
     # Register VNs
     for vn_id in validator_nodes:
+        print("Waiting for wallet balance", end=".")
+        while wallet.grpc_client.get_balance().available_balance == 0:
+            time.sleep(1)
+            print(".", end="")
+        print("done")
         validator_nodes[vn_id].register(local_ip)
         # Uncomment next line if you want to have only one registeration per block
         # miner.mine(1)

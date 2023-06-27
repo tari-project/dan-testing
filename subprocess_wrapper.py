@@ -2,12 +2,13 @@
 import subprocess
 import platform
 from typing import Any
+from config import TARI_DAN_BINS_FOLDER, TARI_BINS_FOLDER
 
 
 class SubprocessWrapper:
     def call(*args: Any, **kwargs: Any) -> int:
         if type(args[0]) == list and platform.system() == "Windows":
-            if args[0][0].startswith("./tari"):
+            if args[0][0].startswith(TARI_BINS_FOLDER) or args[0][0].startswith(TARI_DAN_BINS_FOLDER):
                 args[0][0] += ".exe"
             elif args[0][0] == "npm":
                 args[0][0] += ".cmd"
@@ -17,7 +18,7 @@ class SubprocessWrapper:
 
     def Popen(*args: Any, **kwargs: Any) -> subprocess.Popen[Any]:
         if type(args[0]) == list and platform.system() == "Windows":
-            if args[0][0].startswith("./tari"):
+            if args[0][0].startswith(TARI_BINS_FOLDER) or args[0][0].startswith(TARI_DAN_BINS_FOLDER):
                 args[0][0] += ".exe"
             elif args[0][0] == "npm":
                 args[0][0] += ".cmd"
@@ -27,7 +28,7 @@ class SubprocessWrapper:
 
     def run(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess[str]:
         if type(args[0]) == list and platform.system() == "Windows":
-            if args[0][0].startswith("./tari"):
+            if args[0][0].startswith(TARI_BINS_FOLDER) or args[0][0].startswith(TARI_DAN_BINS_FOLDER):
                 args[0][0] += ".exe"
             elif args[0][0] == "npm":
                 args[0][0] += ".cmd"

@@ -1,6 +1,16 @@
 import os
+from typing import Any
+
+
+def get_env_or_default(env_name: str, default: Any):
+    if env_name in os.environ:
+        return os.environ[env_name]
+    return default
+
 
 DATA_FOLDER = "Data"
+TARI_BINS_FOLDER = get_env_or_default("TARI_BINS_FOLDER", "bins")
+TARI_DAN_BINS_FOLDER = get_env_or_default("TARI_DAN_BINS_FOLDER", "bins")
 DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE = True
 DELETE_STDOUT_LOGS = True
 DELETE_TEMPLATES = False

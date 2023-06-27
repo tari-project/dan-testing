@@ -1,5 +1,5 @@
 # type:ignore
-from config import REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
+from config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
 import base64
 import os
 import requests
@@ -127,20 +127,24 @@ class DanWalletDaemon(CommonExec):
     def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int, local_ip: str):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
+        self.http_port = self.get_port("HTTP")
+        self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_dan_wallet_daemon"]
+            run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_daemon")]
         else:
-            run = ["cargo", "run", "--bin", "tari_dan_wallet_daemon", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+            run = ["cargo", "run", "--bin", "tari_dan_wallet_daemon", "--manifest-path", os.path.join("..", "tari-dan", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",
-            f"{DATA_FOLDER}/dan_wallet_daemon_{dan_wallet_id}",
+            os.path.join(DATA_FOLDER, f"dan_wallet_daemon_{dan_wallet_id}"),
             "--network",
             "localnet",
             "--listen-addr",
             f"{local_ip}:{self.json_rpc_port}",
             "--indexer_url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
+            "-p",
+            f"dan_wallet_daemon.http_ui_address={self.http_ui_address}",
         ]
         if signaling_server_port:
             self.exec = [*self.exec, "--signaling_server_address", f"{local_ip}:{signaling_server_port}"]
@@ -149,45 +153,9 @@ class DanWalletDaemon(CommonExec):
         # (out, err) = self.process.communicate()
         jrpc_address = f"http://{local_ip}:{self.json_rpc_port}"
         self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
-        self.http_client = DanWalletUI(self.id, jrpc_address)
-        while not os.path.exists(f"{DATA_FOLDER}/dan_wallet_daemon_{dan_wallet_id}/localnet/pid"):
+        while not os.path.exists(os.path.join(DATA_FOLDER, f"dan_wallet_daemon_{dan_wallet_id}", "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"DAN wallet did not start successfully: Exit code:{self.process.poll()}")
         print(f"Dan wallet daemon {dan_wallet_id} started")
-
-
-npm_install_done = False
-npm_install_mutex = Lock()
-
-
-class DanWalletUI(CommonExec):
-    def __init__(self, dan_wallet_id, daemon_jrpc_address):
-        global npm_install_done, npm_install_mutex
-        super().__init__("dan_wallet_ui", dan_wallet_id)
-        npm_install_mutex.acquire()
-        if not npm_install_done:
-            self.process = SubprocessWrapper.call(
-                ["npm", "install"],
-                stdin=subprocess.PIPE,
-                stdout=open(f"{DATA_FOLDER}/stdout/tari-connector_prepare.log", "a+"),
-                stderr=subprocess.STDOUT,
-                cwd="../tari-dan/applications/tari_dan_wallet_web_ui",
-            )
-            npm_install_done = True
-        npm_install_mutex.release()
-        self.http_port = self.get_port("HTTP")
-        self.exec = [
-            "npm",
-            "--prefix",
-            "../tari-dan/applications/tari_dan_wallet_web_ui",
-            "run",
-            "dev",
-            "--",
-            "--port",
-            str(self.http_port),
-        ]
-        self.daemon_jrpc_address = daemon_jrpc_address
-        self.env["VITE_DAEMON_JRPC_ADDRESS"] = daemon_jrpc_address
-        self.run(REDIRECT_DAN_WALLET_WEBUI_STDOUT)

@@ -9,10 +9,11 @@ except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
-from config import NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import TARI_BINS_FOLDER, NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from typing import Any
 from common_exec import CommonExec
 import time
+import os
 
 
 class GrpcWallet:
@@ -29,7 +30,7 @@ class GrpcWallet:
         request = types_pb2.Empty()
         return self.stub.Identify(request)
 
-    def get_balance(self):
+    def get_balance(self) -> wallet_pb2.GetBalanceResponse:
         request = wallet_pb2.GetBalanceRequest()
         return self.stub.GetBalance(request)
 
@@ -45,13 +46,13 @@ class Wallet(CommonExec):
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_console_wallet"]
+            run = [os.path.join(TARI_BINS_FOLDER, "tari_console_wallet")]
         else:
-            run = ["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", "../tari/Cargo.toml", "--"]
+            run = ["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",
-            f"{DATA_FOLDER}/wallet",
+            os.path.join(DATA_FOLDER, "wallet"),
             "-n",
             "--network",
             NETWORK,

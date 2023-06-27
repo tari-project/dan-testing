@@ -39,7 +39,7 @@ class CommonExec:
             self.process = SubprocessWrapper.Popen(
                 self.exec,
                 stdin=subprocess.PIPE,
-                stdout=open(f"{DATA_FOLDER}/stdout/{self.name}.log", "a+"),
+                stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}.log"), "a+"),
                 stderr=subprocess.STDOUT,
                 env={**env, **self.env},
                 cwd=cwd,

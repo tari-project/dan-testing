@@ -1,7 +1,7 @@
 # type:ignore
 import struct
 
-from config import REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import TARI_DAN_BINS_FOLDER, REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from ports import ports
 from dan_wallet_daemon import JrpcDanWalletDaemon
 from typing import Any
@@ -21,7 +21,7 @@ class Template:
 
     def generate(self):
         try:
-            os.makedirs(f"{DATA_FOLDER}/templates")
+            os.makedirs(os.path.join(DATA_FOLDER, "templates"))
         except:
             pass
 
@@ -29,20 +29,22 @@ class Template:
         if REDIRECT_TEMPLATE_STDOUT:
             SubprocessWrapper.call(
                 exec,
-                stdout=open(f"./{DATA_FOLDER}/stdout/template_{self.name}_cargo_generate.log", "a+"),
+                stdout=open(os.path.join(DATA_FOLDER, "stdout", f"template_{self.name}_cargo_generate.log"), "a+"),
                 stderr=subprocess.STDOUT,
-                cwd=f"./{DATA_FOLDER}/templates",
+                cwd=os.path.join(DATA_FOLDER, "templates"),
             )
         else:
-            SubprocessWrapper.call(exec, cwd=f"./{DATA_FOLDER}/templates")
+            SubprocessWrapper.call(exec, cwd=os.path.join(DATA_FOLDER, "templates"))
 
     def compile(self):
         wd = os.getcwd()
-        os.chdir(f"{DATA_FOLDER}/templates/{self.name}/package")
+        os.chdir(os.path.join(DATA_FOLDER, "templates", self.name, "package"))
         exec = ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"]
         if REDIRECT_TEMPLATE_STDOUT:
             SubprocessWrapper.call(
-                exec, stdout=open(f"../../../stdout/template_{self.name}_cargo_build.log", "a+"), stderr=subprocess.STDOUT
+                exec,
+                stdout=open(os.path.join("..", "..", "..", "stdout", f"template_{self.name}_cargo_build.log"), "a+"),
+                stderr=subprocess.STDOUT,
             )
         else:
             SubprocessWrapper.call(exec)
@@ -50,9 +52,17 @@ class Template:
 
     def publish_template(self, jrpc_port: int, server_port: int, local_ip):
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_validator_node_cli"]
+            run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node_cli")]
         else:
-            run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+            run = [
+                "cargo",
+                "run",
+                "--bin",
+                "tari_validator_node_cli",
+                "--manifest-path",
+                os.path.join("..", "tari-dan", "Cargo.toml"),
+                "--",
+            ]
 
         exec = [
             *run,
@@ -63,7 +73,7 @@ class Template:
             "--binary-url",
             f"http://localhost:{server_port}/templates/{self.name}/package/target/wasm32-unknown-unknown/release/{self.name}.wasm",
             "--template-code-path",
-            f"./{DATA_FOLDER}/templates/{self.name}/package/",
+            os.path.join(DATA_FOLDER, "templates", self.name, "package"),
             "--template-name",
             f"{self.name}",
             "--template-version",

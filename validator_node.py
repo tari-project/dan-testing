@@ -1,7 +1,7 @@
 # type:ignore
 
 from ports import ports
-from config import NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
@@ -45,13 +45,13 @@ class ValidatorNode(CommonExec):
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_validator_node"]
+            run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node")]
         else:
-            run = ["cargo", "run", "--bin", "tari_validator_node", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+            run = ["cargo", "run", "--bin", "tari_validator_node", "--manifest-path", os.path.join("..", "tari-dan", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",
-            f"{DATA_FOLDER}/vn_{node_id}",
+            os.path.join(DATA_FOLDER, f"vn_{node_id}"),
             "--network",
             NETWORK,
             "-p",
@@ -79,7 +79,7 @@ class ValidatorNode(CommonExec):
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
         print("Waiting for VN to start.", end="")
-        while not os.path.exists(f"{DATA_FOLDER}/vn_{node_id}/localnet/pid"):
+        while not os.path.exists(os.path.join(DATA_FOLDER, f"vn_{node_id}", "localnet", "pid")):
             print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
@@ -89,7 +89,7 @@ class ValidatorNode(CommonExec):
         self.jrpc_client = JrpcValidatorNode(f"http://{local_ip}:{self.json_rpc_port}")
 
     def get_address(self) -> str:
-        validator_node_id_file_name = f"./{DATA_FOLDER}/vn_{self.id}/{NETWORK}/validator_node_id.json"
+        validator_node_id_file_name = os.path.join(DATA_FOLDER, f"vn_{self.id}", NETWORK, "validator_node_id.json")
         while not os.path.exists(validator_node_id_file_name):
             time.sleep(1)
         f = open(validator_node_id_file_name, "rt")
@@ -102,13 +102,21 @@ class ValidatorNode(CommonExec):
 
     def register(self, local_ip: str):
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_validator_node_cli"]
+            run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node_cli")]
         else:
-            run = ["cargo", "run", "--bin", "tari_validator_node_cli", "--manifest-path", "../tari-dan/Cargo.toml", "--"]
+            run = [
+                "cargo",
+                "run",
+                "--bin",
+                "tari_validator_node_cli",
+                "--manifest-path",
+                os.path.join("..", "tari-dan", "Cargo.toml"),
+                "--",
+            ]
         self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/{local_ip}/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(
-                self.exec_cli, stdout=open(f"{DATA_FOLDER}/stdout/vn_{self.id}_cli.log", "a+"), stderr=subprocess.STDOUT
+                self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"vn_{self.id}_cli.log"), "a+"), stderr=subprocess.STDOUT
             )
         else:
             self.cli_process = SubprocessWrapper.call(self.exec_cli)

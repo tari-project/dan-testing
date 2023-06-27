@@ -1,20 +1,21 @@
 # type:ignore
 
-from config import NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import TARI_BINS_FOLDER, NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from subprocess_wrapper import SubprocessWrapper
 import subprocess
+import os
 
 
 class Miner:
     def __init__(self, base_node_grpc_port, wallet_grpc_port, local_ip):
         if USE_BINARY_EXECUTABLE:
-            run = ["./tari_miner"]
+            run = [os.path.join(TARI_BINS_FOLDER, "tari_miner")]
         else:
-            run = ["cargo", "run", "--bin", "tari_miner", "--manifest-path", "../tari/Cargo.toml", "--"]
+            run = ["cargo", "run", "--bin", "tari_miner", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec_template = [
             *run,
             "-b",
-            f"{DATA_FOLDER}/miner",
+            os.path.join(DATA_FOLDER, "miner"),
             "--network",
             NETWORK,
             "--max-blocks",
@@ -31,6 +32,8 @@ class Miner:
         self.exec = list(self.exec_template)
         self.exec[self.exec.index("#blocks")] = str(blocks)
         if REDIRECT_MINER_STDOUT:
-            self.process = SubprocessWrapper.call(self.exec, stdout=open(f"{DATA_FOLDER}/stdout/miner.log", "a+"), stderr=subprocess.STDOUT)
+            self.process = SubprocessWrapper.call(
+                self.exec, stdout=open(os.path.join(DATA_FOLDER, "stdout", "miner.log"), "a+"), stderr=subprocess.STDOUT
+            )
         else:
             self.process = SubprocessWrapper.call(self.exec)
