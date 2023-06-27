@@ -52,7 +52,7 @@ class GrpcBaseNode:
 
 
 class BaseNode(CommonExec):
-    def __init__(self, local_ip):
+    def __init__(self, local_ip: str):
         super().__init__("Base_node")
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
@@ -96,7 +96,7 @@ class BaseNode(CommonExec):
                 pass
             time.sleep(1)
 
-    def get_address(self):
+    def get_address(self) -> str:
         base_node_id_file_name = os.path.join(DATA_FOLDER, "base_node", NETWORK, "config", "base_node_id.json")
         while not os.path.exists(base_node_id_file_name):
             time.sleep(1)

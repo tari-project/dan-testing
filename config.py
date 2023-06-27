@@ -2,7 +2,7 @@ import os
 from typing import Any
 
 
-def get_env_or_default(env_name: str, default: Any):
+def get_env_or_default(env_name: str, default: Any) -> Any:
     if env_name in os.environ:
         return os.environ[env_name]
     return default

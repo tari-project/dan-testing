@@ -1,11 +1,11 @@
 # type:ignore
-from config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
+from config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import base64
 import os
 import requests
 import socket
 import time
-from typing import Any, Union
+from typing import Any, Optional
 from common_exec import CommonExec
 from stats import stats
 from subprocess_wrapper import SubprocessWrapper
@@ -14,23 +14,23 @@ import subprocess
 
 
 class JrpcDanWalletDaemon:
-    def __init__(self, jrpc_url):
+    def __init__(self, jrpc_url: str):
         self.id = 0
         self.url = jrpc_url
         self.token = None
         self.last_account_name = ""
 
-    def call(self, method, params=[]):
+    def call(self, method: str, params: list[Any] = []):
         self.id += 1
         headers = None
         if self.token:
             headers = {"Authorization": f"Bearer {self.token}"}
         response = requests.post(self.url, json={"jsonrpc": "2.0", "method": method, "id": self.id, "params": params}, headers=headers)
-        x = response.json()
-        if "error" in x:
-            print(x["error"])
+        json_response = response.json()
+        if "error" in json_response:
+            print(json_response["error"])
         else:
-            return x["result"]
+            return json_response["result"]
 
     def auth(self):
         resp = self.call("auth.request", [["Admin"], None])
@@ -41,24 +41,24 @@ class JrpcDanWalletDaemon:
     def keys_list(self):
         return self.call("keys.list")
 
-    def accounts_create(self, name: str, custom_access_rules: Any = None, fee: Union[int, None] = None, is_default: bool = True):
+    def accounts_create(self, name: str, custom_access_rules: Any = None, fee: Optional[int] = None, is_default: bool = True):
         id = stats.start_run("accounts.create")
         res = self.call("accounts.create", [name, custom_access_rules, fee, is_default])
         self.last_account_name = name
         stats.end_run(id)
         return res
 
-    def create_free_test_coins(self, account: Any, amount: int, fee: Union[int, None] = None):
+    def create_free_test_coins(self, account: Any, amount: int, fee: Optional[int] = None):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call("accounts.create_free_test_coins", [account, amount, fee])
         self.last_account_name = account
         stats.end_run(id)
         return res
 
-    def accounts_list(self, offset=0, limit=1):
+    def accounts_list(self, offset: int = 0, limit: int = 1):
         return self.call("accounts.list", [offset, limit])
 
-    def transaction_submit_instruction(self, instruction, dump_buckets=True):
+    def transaction_submit_instruction(self, instruction, dump_buckets: bool = True):
         tx_id = 0
         if dump_buckets:
             tx_id = self.call(
@@ -105,13 +105,13 @@ class JrpcDanWalletDaemon:
     def get_balances(self, account: Any):
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
-    def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Union[int, None]):
+    def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int]):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
         stats.end_run(id)
         return res
 
-    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Union[int, None]):
+    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int]):
         id = stats.start_run("accounts.create_free_test_coins")
         res = self.call(
             "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
@@ -119,7 +119,7 @@ class JrpcDanWalletDaemon:
         stats.end_run(id)
         return res
 
-    def get_all_tx_by_status(self, status: str):
+    def get_all_tx_by_status(self, status: Optional[str] = None):
         return self.call("transactions.get_all_by_status", [status])
 
 
