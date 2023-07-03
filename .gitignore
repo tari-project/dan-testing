@@ -19,3 +19,6 @@ build
 *.egg-info
 *.egg
 node_modules/*
+
+# OSX files
+.DS_Store
