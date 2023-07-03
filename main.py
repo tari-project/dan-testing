@@ -249,7 +249,7 @@ def cli_loop():
 def stress_test():
     global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server
 
-    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
+    num_of_tx = 1  # this is how many times we send the funds back and forth for each of two wallets
 
     def send_tx(src_id: int, dst_id: int):
         src_account = dan_wallets[src_id].jrpc_client.accounts_list()[("accounts")][0]
@@ -259,10 +259,10 @@ def stress_test():
         dst_public_key = dst_account["public_key"]
         for i in range(num_of_tx):
             print(f"tx {src_id} -> {dst_id} ({i})")
-            dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
-            dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
-            dan_wallets[src_id].jrpc_client.transfer(src_account, 1, res_addr, dst_public_key, 1)
-            dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
+            # dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
+            # dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
+            dan_wallets[src_id].jrpc_client.transfer(src_account, 1, res_addr, dst_public_key, 2000)
+            # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
 
     # We will send back and forth between two wallets. So with n*2 wallets we have n concurrent TXs
     start = time.time()
@@ -324,6 +324,8 @@ try:
                         shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
         print_step("!!! YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
+        print_step(f"Tari folder {TARI_BINS_FOLDER}")
+        print_step(f"Tari dan folder {TARI_DAN_BINS_FOLDER}")
         check_executable(TARI_BINS_FOLDER, "tari_base_node")
         check_executable(TARI_BINS_FOLDER, "tari_console_wallet")
         check_executable(TARI_BINS_FOLDER, "tari_miner")
