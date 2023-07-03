@@ -1,0 +1,156 @@
+---
+name: Build docker image - workflow_call/on-demand
+
+'on':
+  push:
+    branches:
+      - build-*
+  workflow_call:
+    secrets:
+      DOCKER_PROVIDER:
+        required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
+    inputs:
+      arch:
+        type: string
+        default: x86-64
+      features:
+        type: string
+        default: safe
+      version:
+        type: string
+        description: 'build tag/version'
+      tag_alias:
+        type: string
+        description: 'build tag alias'
+      platforms:
+        type: string
+        # linux/arm64, linux/amd64
+        default: linux/amd64
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+        
+env:
+  IMAGE_NAME: dan-testing
+  TARI_REPO: tari-project/tari
+  TARI_BRANCH: v0.51.0-pre.3
+  TARI-DAN_REPO: tari-project/tari-dan
+  TARI-DAN_BRANCH: development
+  TARI-CONNECTOR_REPO: tari-project/tari-connector
+  TARI-CONNECTOR_BRANCH: development
+
+jobs:
+  docker_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout dan-testing
+        uses: actions/checkout@v3
+        with:
+          path: sources/dan-testing
+
+      - name: checkout tari
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.TARI_REPO }}
+          ref: ${{ env.TARI_BRANCH }}
+          path: sources/tari
+
+      - name: checkout tari-dan
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.TARI-DAN_REPO }}
+          ref: ${{ env.TARI-DAN_BRANCH }}
+          path: sources/tari-dan
+
+      - name: checkout tari-connector
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.TARI-CONNECTOR_REPO }}
+          ref: ${{ env.TARI-CONNECTOR_BRANCH }}
+          path: sources/tari-connector
+    
+      - name: environment setup
+        shell: bash
+        run: |
+          cp -v sources/dan-testing/docker_rig/cross-compile-aarch64.sh sources/
+          if [ -z "${{ inputs.version }}" ]; then
+            echo "Get dan-testing version"
+            TARI_SOURCE_ROOT="sources/dan-testing/"
+            VBRANCH=$(git --git-dir ${TARI_SOURCE_ROOT}/.git branch --show-current)
+            VSHA_SHORT=$(git --git-dir ${TARI_SOURCE_ROOT}/.git rev-parse --short HEAD)
+            VERSION="${VBRANCH}_$(date -u '+%Y%m%d')_${VSHA_SHORT}"
+          else
+            VERSION=${{ inputs.version }}
+          fi
+          echo "Setting ${VERSION} as docker tag"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          if [ ! -z "${{ inputs.tag_alias }}" ]; then
+            echo "Setup tag_alias"
+            echo "TAG_ALIAS=${{ secrets.DOCKER_PROVIDER }}/${{ secrets.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ inputs.tag_alias }}" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU for Docker
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            #name/${{ env.IMAGE_NAME }}
+            #ghcr.io/${{ github.repository }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          #username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Image Provider
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.DOCKER_PROVIDER }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker image build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: ./sources/
+          file: ./sources/dan-testing/docker_rig/${{ env.IMAGE_NAME }}.Dockerfile
+          platforms: ${{ inputs.platforms }}
+          push: true
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            ARCH=${{ inputs.arch }}
+            ${{ env.DOCKER_SUBTAG }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ secrets.DOCKER_PROVIDER }}/${{ secrets.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.TAG_ALIAS }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
