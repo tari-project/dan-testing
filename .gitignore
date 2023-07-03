@@ -18,3 +18,4 @@ Data
 build
 *.egg-info
 *.egg
+node_modules/*
