@@ -47,6 +47,8 @@ env:
 jobs:
   docker_build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
 
     steps:
       - name: checkout dan-testing
