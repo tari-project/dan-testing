@@ -18,4 +18,8 @@ Data
 build
 *.egg-info
 *.egg
+node_modules/*
 venv/
+
+# OSX files
+.DS_Store
