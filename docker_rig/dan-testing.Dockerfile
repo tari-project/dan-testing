@@ -268,5 +268,5 @@ ENV USER=tari
 WORKDIR /home/tari/sources/dan-testing
 #ENTRYPOINT [ "tari_base_node" ]
 #CMD [ "--non-interactive-mode" ]
-CMD [ "python3", "main.py"]
+CMD [ "python3", "main.py" ]
 #CMD [ "tail", "-f", "/dev/null" ]

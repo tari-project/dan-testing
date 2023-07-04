@@ -2,9 +2,6 @@
 name: Build docker image - workflow_call/on-demand
 
 'on':
-  push:
-    branches:
-      - build-*
   workflow_call:
     secrets:
       DOCKER_PROVIDER:
@@ -12,6 +9,8 @@ name: Build docker image - workflow_call/on-demand
       DOCKER_USERNAME:
         required: true
       DOCKER_PASSWORD:
+        required: true
+      DOCKER_REPO:
         required: true
     inputs:
       arch:
@@ -30,10 +29,6 @@ name: Build docker image - workflow_call/on-demand
         type: string
         # linux/arm64, linux/amd64
         default: linux/amd64
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
         
 env:
   IMAGE_NAME: dan-testing
