@@ -72,6 +72,8 @@ jobs:
           fi
 
   builds_run:
+    permissions:
+      packages: write
     needs: builds_envs_setup
     uses: ./.github/workflows/build_dockers_workflow.yml
     secrets: inherit
