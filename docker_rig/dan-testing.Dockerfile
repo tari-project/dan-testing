@@ -213,10 +213,16 @@ RUN apt-get update && apt-get --no-install-recommends install -y \
       python3-grpc-tools \
       python3-psutil
 
+RUN rustup target add wasm32-unknown-unknown
+
 RUN rustup toolchain install nightly --force-non-host && \
-    rustup target add wasm32-unknown-unknown && \
-    rustup target add wasm32-unknown-unknown --toolchain nightly && \
-    rustup default nightly-2022-11-03
+    rustup target add wasm32-unknown-unknown --toolchain nightly
+#    rustup default nightly-2022-11-03
+
+# Debugging
+RUN rustup target list --installed && \
+    rustup toolchain list && \
+    rustup show
 
 RUN groupadd --gid 1000 tari && \
     useradd --create-home --no-log-init --shell /bin/bash \
@@ -240,10 +246,13 @@ RUN mkdir -p "/home/tari/sources/tari-connector" && \
 
 USER tari
 WORKDIR /home/tari
+
+# Debugging
 RUN rustup target list --installed && \
     rustup toolchain list && \
-    rustup show && \
-    cargo install cargo-generate
+    rustup show
+
+RUN cargo install cargo-generate
 
 WORKDIR /home/tari/sources
 #ADD --chown=tari:tari tari tari
