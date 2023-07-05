@@ -60,7 +60,8 @@ ADD cross-compile-aarch64.sh .
 
 RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; then \
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
-      source /tari/cross-compile-aarch64.sh ; \
+      # source /tari/cross-compile-aarch64.sh
+      . /tari/cross-compile-aarch64.sh ; \
     fi && \
     if [ -n "${RUST_TOOLCHAIN}" ] ; then \
       # Install a non-standard toolchain if it has been requested.
@@ -141,7 +142,8 @@ ADD cross-compile-aarch64.sh .
 
 RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; then \
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
-      source /tari-dan/cross-compile-aarch64.sh ; \
+      # source /tari-dan/cross-compile-aarch64.sh
+      . /tari-dan/cross-compile-aarch64.sh ; \
     fi && \
     if [ -n "${RUST_TOOLCHAIN}" ] ; then \
       # Install a non-standard toolchain if it has been requested.
