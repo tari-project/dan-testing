@@ -8,7 +8,8 @@ set -e
 
 export BUILD_TARGET="aarch64-unknown-linux-gnu/"
 export RUST_TARGET="--target=aarch64-unknown-linux-gnu"
-export ARCH=${ARCH:-generic}
+#export ARCH=${ARCH:-generic}
+export ARCH=generic
 export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
 export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
 export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
