@@ -33,7 +33,7 @@ NETWORK = "localnet"
 SPAWN_VNS = int(get_env_or_default("DAN_TESTING_SPAWN_VNS", 1))
 SPAWN_INDEXERS = int(get_env_or_default("DAN_TESTING_SPAWN_INDEXERS", 1))
 SPAWN_WALLETS_PER_INDEXER = int(get_env_or_default("DAN_TESTING_SPAWN_WALLETS_PER_INDEXER", 2))
-CREATE_ACCOUNTS_PER_WALLET = int(get_env_or_default("DAN_TESTING_SPAWN_WALLETS_PER_INDEXER", 1))
+CREATE_ACCOUNTS_PER_WALLET = int(get_env_or_default("DAN_TESTING_CREATE_ACCOUNTS_PER_WALLET", 1))
 # Any one of the templates from `wasm_template`
 TEMPLATES = "fungible,swap"
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
