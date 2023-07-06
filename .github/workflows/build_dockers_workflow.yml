@@ -29,7 +29,7 @@ name: Build docker image - workflow_call/on-demand
         type: string
         # linux/arm64, linux/amd64
         default: linux/amd64
-        
+
 env:
   IMAGE_NAME: dan-testing
   TARI_REPO: tari-project/tari
@@ -41,7 +41,8 @@ env:
 
 jobs:
   docker_build:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
       packages: write
 
@@ -71,7 +72,7 @@ jobs:
           repository: ${{ env.TARI-CONNECTOR_REPO }}
           ref: ${{ env.TARI-CONNECTOR_BRANCH }}
           path: sources/tari-connector
-    
+
       - name: environment setup
         shell: bash
         run: |
@@ -137,8 +138,8 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: true
           provenance: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
           build-args: |
             VERSION=${{ env.VERSION }}
             ARCH=${{ inputs.arch }}
