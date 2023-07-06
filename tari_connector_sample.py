@@ -18,7 +18,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "install"],
             stdin=subprocess.PIPE,
-            stdout=open(os.path.join(DATA_FOLDER, "stdout", "tari-connector_prepare.log"), "a+"),
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"tari-{self.name}_prepare.log"), "a+"),
             stderr=subprocess.STDOUT,
             cwd=os.path.join("..", "tari-connector"),
         )
@@ -27,7 +27,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "link"],
             stdin=subprocess.PIPE,
-            stdout=open(os.path.join(DATA_FOLDER, "stdout", "tari-connector_prepare.log"), "a+"),
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"tari-{self.name}_prepare.log"), "a+"),
             stderr=subprocess.STDOUT,
             cwd=os.path.join("..", "tari-connector"),
         )
@@ -35,7 +35,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "install"],
             stdin=subprocess.PIPE,
-            stdout=open(os.path.join(DATA_FOLDER, "stdout", "tari-connector_prepare.log"), "a+"),
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"tari-{self.name}_prepare.log"), "a+"),
             stderr=subprocess.STDOUT,
             cwd=os.path.join("..", "tari-connector", "examples", "material-vite-ts"),
         )
@@ -43,7 +43,7 @@ class TariConnectorSample(CommonExec):
         self.process = SubprocessWrapper.call(
             [npm, "link", "tari-connector"],
             stdin=subprocess.PIPE,
-            stdout=open(os.path.join(DATA_FOLDER, "stdout", "tari-connector_prepare.log"), "a+"),
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"tari-{self.name}_prepare.log"), "a+"),
             stderr=subprocess.STDOUT,
             cwd=os.path.join("..", "tari-connector", "examples", "material-vite-ts"),
         )
