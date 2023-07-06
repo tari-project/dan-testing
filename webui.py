@@ -89,8 +89,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
             return InvalidParams()
 
         @method
-        def http_connector(id: int) -> Result:
-            http_address = self.commands.http_connector(id)
+        def http_connector() -> Result:
+            http_address = self.commands.http_connector()
             if http_address:
                 return Success(http_address)
             return InvalidParams()
@@ -256,7 +256,7 @@ class WebuiServer(CommonExec):
             self.http_port = self.get_port("HTTP")
         else:
             self.http_port = int(WEBUI_PORT)
-        self.exec = ["npm", "--prefix", "webui", "run", "dev", "--", "--port", str(self.http_port), "--host", local_ip]
+        self.exec = ["npm", "--prefix", "webui", "run", "dev", "--", "--port", str(self.http_port), "--host", "0.0.0.0"]
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = jrpc_webui_server_address
         self.run(True)
         if WEBUI_PORT == "auto":

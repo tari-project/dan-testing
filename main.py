@@ -167,9 +167,12 @@ def cli_loop():
                             else:
                                 print(f"Indexer id ({indexer_id}) is invalid, either it never existed or you already killed it")
                     elif command == "http connector":
-                        url = f"http://{local_ip}:{tari_connector_sample.http_port}"
-                        print(url)
-                        webbrowser.open(url)
+                        if tari_connector_sample:
+                            url = f"http://{local_ip}:{tari_connector_sample.http_port}"
+                            print(url)
+                            webbrowser.open(url)
+                        else:
+                            print("No tari connector sample")
                     elif command == "http webui":
                         url = f"http://{local_ip}:{server.webui.http_port}"
                         print(url)
@@ -559,6 +562,8 @@ try:
         else:
             print_step("Starting tari-connector test website")
             tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
+    else:
+        tari_connector_sample = None
     if STRESS_TEST:
         stress_test()
     print(stats)

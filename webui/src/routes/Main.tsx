@@ -1,27 +1,50 @@
-import React, { useEffect, useState } from 'react'
-import { jsonRpc } from '../utils/json_rpc';
+import React, { useEffect, useState } from "react";
+import { jsonRpc } from "../utils/json_rpc";
 
 function ShowInfo(index, node, log, stdoutLog) {
-  console.log(node)
   return (
     <div className="info" key={index}>
-      <div><pre></pre><b>Index</b>{index}</div>
-      <div><b>HTTP</b><a href={`http://${node.http}`}>{`http://${node.http}`}</a></div>
-      <div><b>JRPC</b><span className='select'>http://{node.jrpc}</span></div>
+      <div>
+        <pre></pre>
+        <b>Index</b>
+        {index}
+      </div>
+      <div>
+        <b>HTTP</b>
+        <a href={`http://${node.http}`}>{`http://${node.http}`}</a>
+      </div>
+      <div>
+        <b>JRPC</b>
+        <span className="select">http://{node.jrpc}</span>
+      </div>
       <div>
         <b>Logs</b>
-        <div>{log?.map((e) => <div><a href={`log/${btoa(e[0])}/normal`}>{e[1]} - {e[2]}</a></div>)}</div>
+        <div>
+          {log?.map((e) => (
+            <div key={e[0]}>
+              <a href={`log/${btoa(e[0])}/normal`}>
+                {e[1]} - {e[2]}
+              </a>
+            </div>
+          ))}
+        </div>
       </div>
       <div>
-        <div>{stdoutLog?.map((e) => <div><a href={`log/${btoa(e[0])}/stdout`}>stdout</a></div>)}</div>
+        <div>
+          {stdoutLog?.map((e) => (
+            <div key={e[0]}>
+              <a href={`log/${btoa(e[0])}/stdout`}>stdout</a>
+            </div>
+          ))}
+        </div>
       </div>
-    </div >
+    </div>
   );
 }
 
 function ShowInfos(nodes, logs, stdoutLogs, name) {
   return (
-    <div className='infos'>
+    <div className="infos">
       {Object.keys(nodes).map((index) =>
         ShowInfo(index, nodes[index], logs?.[`${name} ${index}`], stdoutLogs?.[`${name} ${index}`])
       )}
@@ -35,6 +58,7 @@ export default function Main() {
   const [indexers, setIndexers] = useState({});
   const [logs, setLogs] = useState({});
   const [stdoutLogs, setStdoutLogs] = useState({});
+  const [connectorSample, setConnectorSample] = useState(null);
 
   useEffect(() => {
     jsonRpc("vns")
@@ -94,18 +118,29 @@ export default function Main() {
       .catch((error) => {
         console.log(error);
       });
+    jsonRpc("http_connector")
+      .then((resp) => {
+        setConnectorSample(resp);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }, []);
   return (
     <div className="main">
-      <div><div className="label">Validator Nodes</div>
+      <div>
+        <div className="label">Validator Nodes</div>
         {ShowInfos(vns, logs, stdoutLogs, "vn")}
       </div>
-      <div><div className="label">Dan Wallets</div>
+      <div>
+        <div className="label">Dan Wallets</div>
         {ShowInfos(danWallet, logs, stdoutLogs, "dan")}
       </div>
-      <div><div className="label">Indexers</div>
+      <div>
+        <div className="label">Indexers</div>
         {ShowInfos(indexers, logs, stdoutLogs, "indexer")}
       </div>
+      {connectorSample && <div className="label"><a href={connectorSample}>Connector sample</a></div>}
     </div>
   );
 }
