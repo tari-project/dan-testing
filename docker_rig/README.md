@@ -1,5 +1,5 @@
 # Docker Build Notes
-Create a folder - sources
+Create a folder ```sources``` and build a docker image.
 ```bash
 mkdir sources
 cd sources
@@ -12,7 +12,7 @@ docker build -f dan-testing/docker_rig/dan-testing.Dockerfile \
   -t local/dan-testing .
 ```
 
-# Docker Testing
+# Docker Testing Notes
 Launching the docker image with local ports redirected to docker container ports 18000 to 19000 
 ```bash
 docker run --rm -it -p 18000-19000:18000-19000 \
@@ -23,8 +23,7 @@ Using the folder ```sources```, builds can be done with
 the docker image.
 ```bash
 docker run --rm -it -p 18000-19000:18000-19000 \
-  -v $PWD/sources/tari-dan/:/tmp \
+  -v $PWD/sources/:/home/tari/sources-build \
   quay.io/tarilabs/dan-testing:development_20230704_790dbea \
   /bin/bash
-
 ```
