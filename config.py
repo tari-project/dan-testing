@@ -9,7 +9,7 @@ def get_env_or_default(env_name: str, default: Any) -> Any:
 
 
 WEBUI_PORT = get_env_or_default("DAN_TESTING_WEBUI_PORT", "auto")
-DATA_FOLDER = "Data"
+DATA_FOLDER = get_env_or_default("DAN_TESTING_DATA_FOLDER", "Data")
 TARI_BINS_FOLDER = get_env_or_default("TARI_BINS_FOLDER", "bins")
 TARI_DAN_BINS_FOLDER = get_env_or_default("TARI_DAN_BINS_FOLDER", "bins")
 DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE = True
@@ -35,20 +35,22 @@ SPAWN_INDEXERS = int(get_env_or_default("DAN_TESTING_SPAWN_INDEXERS", 1))
 SPAWN_WALLETS_PER_INDEXER = int(get_env_or_default("DAN_TESTING_SPAWN_WALLETS_PER_INDEXER", 2))
 CREATE_ACCOUNTS_PER_WALLET = int(get_env_or_default("DAN_TESTING_CREATE_ACCOUNTS_PER_WALLET", 1))
 # Any one of the templates from `wasm_template`
-TEMPLATES = "fungible,swap"
+TEMPLATES = get_env_or_default("DAN_TESTING_TEMPLATES", "fungible,swap")
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
 # use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
-DEFAULT_TEMPLATE_FUNCTION = 'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"'
-BURN_AMOUNT = 1000000
+DEFAULT_TEMPLATE_FUNCTION = get_env_or_default(
+    "DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION", 'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"'
+)
+BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = "DAN_TESTING_NO_FEES" in os.environ
 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
-STEPS_CREATE_ACCOUNT = True
-STEPS_CREATE_TEMPLATE = False
-STEPS_RUN_TARI_CONNECTOR_TEST_SITE = True
+STEPS_CREATE_ACCOUNT = "DAN_TESTING_STEPS_CREATE_ACCOUNT" in os.environ
+STEPS_CREATE_TEMPLATE = "DAN_TESTING_STEPS_CREATE_TEMPLATE" in os.environ
+STEPS_RUN_TARI_CONNECTOR_TEST_SITE = "DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE" in os.environ
 STEPS_RUN_SIGNALLING_SERVER = True
-LISTEN_ONLY_ON_LOCALHOST = False
+LISTEN_ONLY_ON_LOCALHOST = True
 
 COLOR_RED = "\033[91m"
 COLOR_GREEN = "\033[92m"
