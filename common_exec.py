@@ -6,6 +6,7 @@ from ports import ports
 from typing import Optional, Any, Union
 from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import psutil
+import os
 
 
 def kill_process_tree(pid: int):
@@ -23,7 +24,7 @@ class CommonExec:
     def __init__(self, name: str, id: Optional[int] = None):
         self.env: dict[str, str] = {}
         self.id = id
-        if id:
+        if id is not None:
             self.name = f"{name}_{id}"
         else:
             self.name = name
@@ -62,3 +63,19 @@ class CommonExec:
             if self.process:
                 self.process.kill()
             del self.process
+
+    def get_logs(self):
+        logs: list[tuple[str, str, str]] = []
+        for path, _dirs, files in os.walk(os.path.join(DATA_FOLDER, self.name)):
+            for file in files:
+                if file.endswith(".log"):
+                    logs.append((os.path.join(path, file), self.name, os.path.splitext(file)[0]))
+        return logs
+
+    def get_stdout(self):
+        logs: list[tuple[str, str]] = []
+        for path, _dirs, files in os.walk(os.path.join(DATA_FOLDER, "stdout")):
+            for file in files:
+                if self.name in file:
+                    logs.append((os.path.join(path, file), "stdout"))
+        return logs

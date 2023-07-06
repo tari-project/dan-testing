@@ -127,6 +127,7 @@ class DanWalletDaemon(CommonExec):
     def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int, local_ip: str):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
+        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
@@ -136,26 +137,30 @@ class DanWalletDaemon(CommonExec):
         self.exec = [
             *run,
             "-b",
-            os.path.join(DATA_FOLDER, f"dan_wallet_daemon_{dan_wallet_id}"),
+            os.path.join(DATA_FOLDER, self.name),
             "--network",
             "localnet",
-            "--listen-addr",
-            f"{local_ip}:{self.json_rpc_port}",
+            "--json-rpc-address",
+            f"0.0.0.0:{self.json_rpc_port}",
             "--indexer_url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
             "-p",
-            f"dan_wallet_daemon.http_ui_address={self.http_ui_address}",
+            f"dan_wallet_daemon.http_ui_address=0.0.0.0:{self.http_port}",
+            "--ui-connect-address",
+            self.json_rpc_address,
         ]
         if signaling_server_port:
-            self.exec = [*self.exec, "--signaling_server_address", f"{local_ip}:{signaling_server_port}"]
+            self.exec = [*self.exec, "--signaling-server-address", f"{local_ip}:{signaling_server_port}"]
         self.run(REDIRECT_DAN_WALLET_STDOUT)
 
         # (out, err) = self.process.communicate()
-        jrpc_address = f"http://{local_ip}:{self.json_rpc_port}"
-        self.jrpc_client = JrpcDanWalletDaemon(jrpc_address)
-        while not os.path.exists(os.path.join(DATA_FOLDER, f"dan_wallet_daemon_{dan_wallet_id}", "localnet", "pid")):
+        self.jrpc_client = JrpcDanWalletDaemon(f"http://{self.json_rpc_address}")
+        while not os.path.exists(os.path.join(DATA_FOLDER, self.name, "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"DAN wallet did not start successfully: Exit code:{self.process.poll()}")
         print(f"Dan wallet daemon {dan_wallet_id} started")
+
+    def get_info_for_ui(self):
+        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}

@@ -39,7 +39,7 @@ class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, local_ip, peers=[]):
         super().__init__("Validator_node", node_id)
         self.public_port = self.get_port("public_address")
-        self.public_adress = f"/ip4/{local_ip}/tcp/{self.public_port}"
+        self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
         self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
@@ -51,7 +51,7 @@ class ValidatorNode(CommonExec):
         self.exec = [
             *run,
             "-b",
-            os.path.join(DATA_FOLDER, f"vn_{node_id}"),
+            os.path.join(DATA_FOLDER, self.name),
             "--network",
             NETWORK,
             "-p",
@@ -61,7 +61,7 @@ class ValidatorNode(CommonExec):
             "-p",
             "validator_node.p2p.transport.type=tcp",
             "-p",
-            f"validator_node.p2p.transport.tcp.listener_address={self.public_adress}",
+            f"validator_node.p2p.transport.tcp.listener_address=/ip4/0.0.0.0/tcp/{self.public_port}",
             "-p",
             "validator_node.p2p.allow_test_addresses=true",
             "-p",
@@ -69,27 +69,29 @@ class ValidatorNode(CommonExec):
             # "-p",
             # f"validator_node.p2p.public_address={self.public_adress}",
             "-p",
-            f"validator_node.public_address={self.public_adress}",
+            f"validator_node.public_address={self.public_address}",
             "-p",
-            f"validator_node.json_rpc_address={self.json_rpc_address}",
+            f"validator_node.json_rpc_address=0.0.0.0:{self.json_rpc_port}",
             "-p",
-            f"validator_node.http_ui_address={self.http_ui_address}",
+            f"validator_node.http_ui_address=0.0.0.0:{self.http_port}",
             "-p",
             f"validator_node.no_fees={NO_FEES}",
+            "--ui-connect-address",
+            self.json_rpc_address,
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
         print("Waiting for VN to start.", end="")
-        while not os.path.exists(os.path.join(DATA_FOLDER, f"vn_{node_id}", "localnet", "pid")):
+        while not os.path.exists(os.path.join(DATA_FOLDER, self.name, "localnet", "pid")):
             print(".", end="")
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"Validator node did not start successfully: Exit code:{self.process.poll()}")
         print("done")
-        self.jrpc_client = JrpcValidatorNode(f"http://{local_ip}:{self.json_rpc_port}")
+        self.jrpc_client = JrpcValidatorNode(f"http://{self.json_rpc_address}")
 
     def get_address(self) -> str:
-        validator_node_id_file_name = os.path.join(DATA_FOLDER, f"vn_{self.id}", NETWORK, "validator_node_id.json")
+        validator_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "validator_node_id.json")
         while not os.path.exists(validator_node_id_file_name):
             time.sleep(1)
         f = open(validator_node_id_file_name, "rt")
@@ -116,7 +118,10 @@ class ValidatorNode(CommonExec):
         self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/{local_ip}/tcp/{self.json_rpc_port}", "vn", "register"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(
-                self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"vn_{self.id}_cli.log"), "a+"), stderr=subprocess.STDOUT
+                self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}_cli.log"), "a+"), stderr=subprocess.STDOUT
             )
         else:
             self.cli_process = SubprocessWrapper.call(self.exec_cli)
+
+    def get_info_for_ui(self):
+        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}
