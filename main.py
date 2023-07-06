@@ -37,8 +37,8 @@ from template_server import Server
 from threads import threads
 from validator_node import ValidatorNode
 from wallet import Wallet
-import base64
-import json
+from commands import Commands
+from webui import JrpcWebuiServer
 import os
 import re
 import shutil
@@ -68,6 +68,10 @@ print(local_ip)
 
 def cli_loop():
     global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server
+    commands = Commands(
+        local_ip, wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server, signaling_server
+    )
+    server = JrpcWebuiServer(local_ip, commands)
     try:
         while True:
             try:
@@ -86,7 +90,7 @@ def cli_loop():
                     print("grpc <node|wallet> - to get grpc port of node or wallet")
                     print("jrpc <vn <id>|dan <id>|indexer> - to get jrpc port of vn with id <id>, dan wallet with id <id> or indexer")
                     print(
-                        "http <vn <id>|dan <id>|indexer|connector> - to get http address of vn with id <id>, dan with id <id>, indexer or connector (connector sample page)"
+                        "http <vn <id>|dan <id>|indexer|connector|webui> - to get http address of vn with id <id>, dan with id <id>, indexer or connector (connector sample page), webui"
                     )
                     print(
                         "kill <node|wallet|indexer|vn <id>|dan <id>> - to kill node, wallet, indexer, vn with id or dan wallet with id, the command how to run it locally will be printed without the `-n` (non-interactive switch)"
@@ -96,90 +100,78 @@ def cli_loop():
                     print("All indices are zero based")
                 elif command.startswith("burn"):
                     public_key = command.split()[1]
-                    public_key = bytes([int(public_key[i : i + 2], 16) for i in range(0, len(public_key), 2)])
-                    print_step(f"BURNING {BURN_AMOUNT}")
-                    burn = wallet.grpc_client.burn(BURN_AMOUNT, public_key)
-                    os.mkdir("output")
                     outfile = "burn.json"
                     if len(command.split()) > 2:
                         outfile = command.split()[2]
-
-                    with open("output/" + outfile, "w") as f:
-                        claim_proof = {
-                            "commitment": base64.b64encode(burn.commitment).decode("utf-8"),
-                            "range_proof": base64.b64encode(burn.range_proof).decode("utf-8"),
-                            "reciprocal_claim_public_key": base64.b64encode(burn.reciprocal_claim_public_key).decode("utf-8"),
-                            "ownership_proof": {
-                                "u": base64.b64encode(burn.ownership_proof.u).decode("utf-8"),
-                                "v": base64.b64encode(burn.ownership_proof.v).decode("utf-8"),
-                                "public_nonce": base64.b64encode(burn.ownership_proof.public_nonce).decode("utf-8"),
-                            },
-                        }
-
-                        json.dump(claim_proof, f)
-                    print("written to file", outfile)
+                    commands.burn(public_key, outfile, BURN_AMOUNT)
 
                 elif command.startswith("mine"):
                     blocks = int(command.split()[1])
-                    miner.mine(blocks)  # Mine the register TXs
+                    commands.mine(blocks)
                 elif command.startswith("grpc"):
                     what = command.split()[1]
-                    if what == "node":
-                        print(base_node.grpc_port)
-                    elif what == "wallet":
-                        print(wallet.grpc_port)
+                    print(commands.grpc(what))
                 elif command.startswith("jrpc vn"):
                     if r := re.match(r"jrpc vn (\d+)", command):
                         vn_id = int(r.group(1))
-                        if vn_id in validator_nodes:
-                            print(validator_nodes[vn_id].json_rpc_port)
+                        jrpc_port = commands.jrpc_vn(vn_id)
+                        if jrpc_port:
+                            print(jrpc_port)
                         else:
                             print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
                 elif command.startswith("jrpc dan"):
                     if r := re.match(r"jrpc dan (\d+)", command):
                         dan_id = int(r.group(1))
-                        if dan_id in dan_wallets:
-                            print(dan_wallets[dan_id].json_rpc_port)
+                        jrpc_port = commands.jrpc_dan(dan_id)
+                        if jrpc_port:
+                            print(jrpc_port)
                         else:
-                            print(f"dan id ({dan_id}) is invalid, either it never existed or you already killed it")
+                            print(f"Dan id ({dan_id}) is invalid, either it never existed or you already killed it")
                 elif command.startswith("jrpc indexer"):
                     if r := re.match(r"jrpc indexer (\d+)", command):
                         indexer_id = int(r.group(1))
-                        if indexer_id in indexers:
-                            print(indexers[indexer_id].json_rpc_port)
+                        jrpc_port = commands.jrpc_indexer(indexer_id)
+                        if jrpc_port:
+                            print(jrpc_port)
+                        else:
+                            print(f"Indexer ({indexer_id}) is invalid, either it never existed or you already killed it")
+                elif command == ("jrpc signaling"):
+                    url = f"http://{local_ip}:{signaling_server.json_rpc_port}"
+                    print(url)
                 elif command.startswith("http"):
                     if command.startswith("http vn"):
                         if r := re.match(r"http vn (\d+)", command):
                             vn_id = int(r.group(1))
-                            if vn_id in validator_nodes:
-                                url = f"http://{validator_nodes[vn_id].http_ui_address}"
-                                print(url)
-                                webbrowser.open(url)
+                            http_address = commands.http_vn(vn_id)
+                            if http_address:
+                                print(http_address)
+                                webbrowser.open(http_address)
                             else:
                                 print(f"VN id ({vn_id}) is invalid, either it never existed or you already killed it")
                     elif command.startswith("http dan"):
                         if r := re.match(r"http dan (\d+)", command):
                             dan_id = int(r.group(1))
-                            if dan_id in dan_wallets:
-                                url = f"http://{dan_wallets[dan_id].http_ui_address}"
-                                print(url)
-                                webbrowser.open(url)
+                            http_address = commands.http_dan(dan_id)
+                            if http_address:
+                                print(http_address)
+                                webbrowser.open(http_address)
                             else:
-                                print(f"DAN id ({dan_id}) is invalid, either it never existed or you already killed it")
+                                print(f"Dan id ({dan_id}) is invalid, either it never existed or you already killed it")
                     elif command.startswith("http indexer"):
                         if r := re.match(r"http indexer (\d+)", command):
                             indexer_id = int(r.group(1))
-                            if indexer_id in indexers:
-                                url = f"http://{indexers[indexer_id].http_ui_address}"
-                                print(url)
-                                webbrowser.open(url)
+                            http_address = commands.http_indexer(indexer_id)
+                            if http_address:
+                                print(http_address)
+                                webbrowser.open(http_address)
                             else:
                                 print(f"Indexer id ({indexer_id}) is invalid, either it never existed or you already killed it")
-                    elif command == ("http signaling"):
-                        url = f"http://localhost:{signaling_server.json_rpc_port}"
+                    elif command == "http connector":
+                        url = f"http://{local_ip}:{tari_connector_sample.http_port}"
                         print(url)
-                    elif command == ("http connector"):
-                        url = f"http://localhost:{tari_connector_sample.http_port}"
+                        webbrowser.open(url)
+                    elif command == "http webui":
+                        url = f"http://{local_ip}:{server.webui.http_port}"
                         print(url)
                         webbrowser.open(url)
                     else:
@@ -244,6 +236,7 @@ def cli_loop():
     except Exception as ex:
         print("Failed in CLI loop:", ex)
         traceback.print_exc()
+    del server
 
 
 def stress_test():
@@ -313,15 +306,16 @@ def wait_for_vns_to_sync():
 
 try:
     if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE or DELETE_STDOUT_LOGS:
-        for file in os.listdir(os.path.join(os.getcwd(), DATA_FOLDER)):
-            full_path = os.path.join(os.getcwd(), DATA_FOLDER, file)
-            if os.path.isdir(full_path):
-                if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE:
-                    if file != "templates" or DELETE_TEMPLATES:
-                        shutil.rmtree(full_path)
-                else:
-                    if re.match(r"stdout", file):
-                        shutil.rmtree(full_path)
+        if os.path.exists(DATA_FOLDER):
+            for file in os.listdir(DATA_FOLDER):
+                full_path = os.path.join(os.getcwd(), DATA_FOLDER, file)
+                if os.path.isdir(full_path):
+                    if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE:
+                        if file != "templates" or DELETE_TEMPLATES:
+                            shutil.rmtree(full_path)
+                    else:
+                        if re.match(r"stdout", file):
+                            shutil.rmtree(full_path)
     if USE_BINARY_EXECUTABLE:
         print_step("!!! YOU ARE USING EXECUTABLE BINARIES AND NOT COMPILING THE CODE !!!")
         print_step(f"Tari folder {TARI_BINS_FOLDER}")

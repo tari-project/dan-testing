@@ -36,6 +36,8 @@ class Indexer(CommonExec):
             *run,
             "-b",
             os.path.join(DATA_FOLDER, f"indexer_{self.id}"),
+            "--log_config",
+            os.path.join(DATA_FOLDER, f"indexer_{self.id}"),
             "--network",
             NETWORK,
             "-p",
@@ -78,6 +80,9 @@ class Indexer(CommonExec):
         ).groups()
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
+
+    def get_info_for_ui(self):
+        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}
 
 
 class JrpcIndexer:

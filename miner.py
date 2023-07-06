@@ -8,6 +8,7 @@ import os
 
 class Miner:
     def __init__(self, base_node_grpc_port, wallet_grpc_port, local_ip):
+        self.name = "miner"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_BINS_FOLDER, "tari_miner")]
         else:
@@ -37,3 +38,19 @@ class Miner:
             )
         else:
             self.process = SubprocessWrapper.call(self.exec)
+
+    def get_logs(self):
+        logs: list[tuple[str, str, str]] = []
+        for path, _dirs, files in os.walk(os.path.join(DATA_FOLDER, self.name)):
+            for file in files:
+                if file.endswith(".log"):
+                    logs.append((os.path.join(path, file), self.name, os.path.splitext(file)[0]))
+        return logs
+
+    def get_stdout(self):
+        logs: list[tuple[str, str]] = []
+        for path, _dirs, files in os.walk(os.path.join(DATA_FOLDER, "stdout")):
+            for file in files:
+                if self.name in file:
+                    logs.append((os.path.join(path, file), "stdout"))
+        return logs
