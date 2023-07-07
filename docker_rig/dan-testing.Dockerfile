@@ -18,6 +18,7 @@ ARG TARGETVARIANT
 ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
+ARG DAN_TESTING_WEBUI_PORT
 
 # Prep nodejs 18.x
 RUN apt-get update && apt-get install -y \
@@ -275,6 +276,7 @@ COPY --chown=tari:tari --from=builder-tari /usr/local/lib/tari/protos /home/tari
 COPY --from=builder-tari /usr/local/bin/tari_* /usr/local/bin/
 COPY --from=builder-tari-dan /usr/local/bin/tari_* /usr/local/bin/
 
+ENV DAN_TESTING_WEBUI_PORT=${DAN_TESTING_WEBUI_PORT:-18000}
 ENV DAN_TESTING_STEPS_CREATE_ACCOUNT=True
 ENV DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE=True
 ENV DAN_TESTING_USE_BINARY_EXECUTABLE=True
