@@ -18,10 +18,12 @@ name: Build docker images
         type: string
         description: 'override image tag/version'
       tag_alias:
+        default: latest
         type: string
         description: 'image tag alias'
       platforms:
-        default: linux/amd64
+        # default: linux/amd64
+        default: linux/arm64, linux/amd64
         description: 'docker platform(s)'
         type: choice
         options:
@@ -56,9 +58,11 @@ jobs:
             echo "General Build - Build All platforms"
             VERSION="${{ github.ref_name }}_$(date -u '+%Y%m%d')_${VSHA_SHORT}"
             echo "Version used - ${VERSION}"
-            echo "platforms=linux/arm64, linux/amd64" >> $GITHUB_OUTPUT
+            echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "tag_alias=latest" >> $GITHUB_OUTPUT
+            echo "tag_alias=latest-amd64" >> $GITHUB_OUTPUT
+            # echo "platforms=linux/arm64, linux/amd64" >> $GITHUB_OUTPUT
+            # echo "tag_alias=latest" >> $GITHUB_OUTPUT
           fi
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] ; then
             echo "Manual Build - selective"
