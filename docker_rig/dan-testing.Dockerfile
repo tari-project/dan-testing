@@ -242,6 +242,7 @@ RUN mkdir -p "/home/tari/sources/tari-connector" && \
     mkdir -p "/home/tari/sources/dan-testing/Data" && \
     mkdir -p "/home/tari/sources/tari" && \
     mkdir -p "/home/tari/sources/tari-dan" && \
+    mkdir -p "/home/tari/data" && \
     chown -R tari:tari "/home/tari/" && \
     mkdir -p "/usr/local/lib/tari/protos" && \
     ln -vsf "/home/tari/sources/tari-connector/" "/usr/lib/node_modules/tari-connector" && \
@@ -274,7 +275,10 @@ COPY --chown=tari:tari --from=builder-tari /usr/local/lib/tari/protos /home/tari
 COPY --from=builder-tari /usr/local/bin/tari_* /usr/local/bin/
 COPY --from=builder-tari-dan /usr/local/bin/tari_* /usr/local/bin/
 
+ENV DAN_TESTING_STEPS_CREATE_ACCOUNT=True
+ENV DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE=True
 ENV DAN_TESTING_USE_BINARY_EXECUTABLE=True
+ENV DAN_TESTING_DATA_FOLDER=/home/tari/data
 ENV TARI_BINS_FOLDER=/usr/local/bin/
 ENV TARI_DAN_BINS_FOLDER=/usr/local/bin/
 ENV USER=tari
