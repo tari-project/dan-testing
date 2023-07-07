@@ -48,7 +48,7 @@ class TariConnectorSample(CommonExec):
             cwd=os.path.join("..", "tari-connector", "examples", "material-vite-ts"),
         )
         # run the project
-        self.exec = [npm, "run", "dev", "--", "--port", str(self.http_port)]
+        self.exec = [npm, "run", "dev", "--", "--port", str(self.http_port), "--host", "0.0.0.0"]
         self.env["VITE_SIGNALING_SERVER_ADDRESS"] = signaling_server_address
         self.run(
             REDIRECT_DAN_WALLET_WEBUI_STDOUT,
