@@ -184,9 +184,10 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
     echo "Tari Dan Build Done"
 
 # Create runtime base minimal image for the target platform executables
-FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-bullseye as runtime
+FROM --platform=$TARGETPLATFORM rust:$RUST_VERSION-bullseye as runtime
 
 ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -234,8 +235,9 @@ RUN groupadd --gid 1000 tari && \
       --home-dir /home/tari \
       --uid 1000 --gid 1000 tari
 
+ENV dockerfile_target_platform=$TARGETPLATFORM
 ENV dockerfile_version=$VERSION
-ENV dockerfile_build_arch=$BUILDPLATFORM
+ENV dockerfile_build_platform=$BUILDPLATFORM
 ENV rust_version=$RUST_VERSION
 
 # Setup some folder structure
