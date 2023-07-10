@@ -1,22 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { jsonRpc } from "../utils/json_rpc";
 
-function ShowInfo(index, node, log, stdoutLog) {
+function ShowInfo(name, node, log, stdoutLog) {
+  const jrpcInfo = node?.jrpc && (
+    <div>
+      <b>JRPC</b>
+      <span className="select">http://{node.jrpc}</span>
+    </div>
+  );
+  const grpcInfo = node?.grpc && (
+    <div>
+      <b>GRPC</b>
+      <span className="select">http://{node.grpc}</span>
+    </div>
+  );
+  const httpInfo = node?.http && (
+    <div>
+      <b>HTTP</b>
+      <a href={`http://${node.http}`}>{`http://${node.http}`}</a>
+    </div>
+  );
   return (
-    <div className="info" key={index}>
+    <div className="info" key={name}>
       <div>
         <pre></pre>
-        <b>Index</b>
-        {index}
+        <b>Name</b>
+        {name}
       </div>
-      <div>
-        <b>HTTP</b>
-        <a href={`http://${node.http}`}>{`http://${node.http}`}</a>
-      </div>
-      <div>
-        <b>JRPC</b>
-        <span className="select">http://{node.jrpc}</span>
-      </div>
+      {httpInfo}
+      {jrpcInfo}
+      {grpcInfo}
       <div>
         <b>Logs</b>
         <div>
@@ -46,7 +59,7 @@ function ShowInfos(nodes, logs, stdoutLogs, name) {
   return (
     <div className="infos">
       {Object.keys(nodes).map((index) =>
-        ShowInfo(index, nodes[index], logs?.[`${name} ${index}`], stdoutLogs?.[`${name} ${index}`])
+        ShowInfo(`${name}_${index}`, nodes[index], logs?.[`${name} ${index}`], stdoutLogs?.[`${name} ${index}`])
       )}
     </div>
   );
@@ -56,6 +69,8 @@ export default function Main() {
   const [vns, setVns] = useState({});
   const [danWallet, setDanWallets] = useState({});
   const [indexers, setIndexers] = useState({});
+  const [node, setNode] = useState();
+  const [wallet, setWallet] = useState();
   const [logs, setLogs] = useState({});
   const [stdoutLogs, setStdoutLogs] = useState({});
   const [connectorSample, setConnectorSample] = useState(null);
@@ -125,9 +140,34 @@ export default function Main() {
       .catch((error) => {
         console.log(error);
       });
+    jsonRpc("get_logs", "node").then((resp) => {
+      setLogs((state) => ({ ...state, node: resp }));
+    });
+    jsonRpc("get_logs", "wallet").then((resp) => {
+      setLogs((state) => ({ ...state, wallet: resp }));
+    });
+    jsonRpc("get_logs", "miner").then((resp) => {
+      setLogs((state) => ({ ...state, miner: resp }));
+    });
+    jsonRpc("get_stdout", "node").then((resp) => {
+      setStdoutLogs((state) => ({ ...state, node: resp }));
+    });
+    jsonRpc("get_stdout", "wallet").then((resp) => {
+      setStdoutLogs((state) => ({ ...state, wallet: resp }));
+    });
+    jsonRpc("get_stdout", "miner").then((resp) => {
+      setStdoutLogs((state) => ({ ...state, miner: resp }));
+    });
+    jsonRpc("grpc_node").then((resp) => setNode({ grpc: resp }));
   }, []);
   return (
     <div className="main">
+      <div className="label">Base layer</div>
+      <div className="infos">
+        {ShowInfo("node", node, logs?.["node"], stdoutLogs?.["node"])}
+        {ShowInfo("wallet", wallet, logs?.["wallet"], stdoutLogs?.["wallet"])}
+        {ShowInfo("miner", null, logs?.["miner"], stdoutLogs?.["miner"])}
+      </div>
       <div>
         <div className="label">Validator Nodes</div>
         {ShowInfos(vns, logs, stdoutLogs, "vn")}
@@ -140,7 +180,11 @@ export default function Main() {
         <div className="label">Indexers</div>
         {ShowInfos(indexers, logs, stdoutLogs, "indexer")}
       </div>
-      {connectorSample && <div className="label"><a href={connectorSample}>Connector sample</a></div>}
+      {connectorSample && (
+        <div className="label">
+          <a href={connectorSample}>Connector sample</a>
+        </div>
+      )}
     </div>
   );
 }
