@@ -243,7 +243,7 @@ class JrpcServer(HTTPServer):
 
 
 class WebuiServer(CommonExec):
-    def __init__(self, jrpc_webui_server_address, local_ip):
+    def __init__(self, jrpc_webui_server_address: str, local_ip: str):
         super().__init__("webui")
         SubprocessWrapper.call(
             ["npm", "install"],

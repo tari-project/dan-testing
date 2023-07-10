@@ -65,11 +65,11 @@ class Commands:
     def mine(self, blocks: int):
         self.miner.mine(blocks)  # Mine the register TXs
 
-    def grpc(self, what: str) -> Optional[int]:
+    def grpc(self, what: str) -> Optional[str]:
         if what == "node":
-            return self.base_node.grpc_port
+            return f"{self.local_ip}:{self.base_node.grpc_port}"
         if what == "wallet":
-            return self.wallet.grpc_port
+            return f"{self.local_ip}:{self.wallet.grpc_port}"
         return None
 
     def jrpc_vn(self, index: int) -> Optional[str]:
