@@ -33,7 +33,7 @@ name: Build docker image - workflow_call/on-demand
 env:
   IMAGE_NAME: dan-testing
   TARI_REPO: tari-project/tari
-  TARI_BRANCH: v0.51.0-pre.3
+  TARI_BRANCH: v0.51.0-pre.4
   TARI-DAN_REPO: tari-project/tari-dan
   TARI-DAN_BRANCH: development
   TARI-CONNECTOR_REPO: tari-project/tari-connector
