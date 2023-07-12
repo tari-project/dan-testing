@@ -20,7 +20,7 @@ ARG RUST_TARGET
 ARG RUST_VERSION
 ARG DAN_TESTING_WEBUI_PORT
 
-# Prep nodejs 18.x
+# Prep nodejs lts - 18.x
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
       bash \
@@ -48,7 +48,7 @@ ENV RUSTFLAGS="-C target_cpu=$ARCH"
 ENV ROARING_ARCH=$ARCH
 ENV CARGO_HTTP_MULTIPLEXING=false
 
-ARG VERSION=1.0.1
+ARG VERSION=0.0.1
 
 RUN if [ "${BUILDARCH}" != "${TARGETARCH}" ] && [ "${ARCH}" = "native" ] ; then \
       echo "!! Cross-compile and native ARCH not a good idea !! " ; \
@@ -105,7 +105,7 @@ ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
 
-# Prep nodejs 18.x
+# Prep nodejs lts - 18.x
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
       bash \
@@ -129,8 +129,6 @@ ARG ARCH=native
 ENV RUSTFLAGS="-C target_cpu=$ARCH"
 ENV ROARING_ARCH=$ARCH
 ENV CARGO_HTTP_MULTIPLEXING=false
-
-ARG VERSION=1.0.1
 
 RUN if [ "${BUILDARCH}" != "${TARGETARCH}" ] && [ "${ARCH}" = "native" ] ; then \
       echo "!! Cross-compile and native ARCH not a good idea !! " ; \
@@ -260,7 +258,8 @@ RUN rustup target list --installed && \
     rustup toolchain list && \
     rustup show
 
-RUN cargo install cargo-generate
+# Move into python due to Cross-compile arm64 on amd64 issue
+#RUN cargo install cargo-generate
 
 WORKDIR /home/tari/sources
 #ADD --chown=tari:tari tari tari
@@ -287,7 +286,5 @@ ENV TARI_BINS_FOLDER=/usr/local/bin/
 ENV TARI_DAN_BINS_FOLDER=/usr/local/bin/
 ENV USER=tari
 WORKDIR /home/tari/sources/dan-testing
-#ENTRYPOINT [ "tari_base_node" ]
-#CMD [ "--non-interactive-mode" ]
 CMD [ "python3", "main.py" ]
 #CMD [ "tail", "-f", "/dev/null" ]
