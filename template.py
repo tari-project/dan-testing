@@ -1,7 +1,13 @@
 # type:ignore
 import struct
 
-from config import TARI_DAN_BINS_FOLDER, REDIRECT_TEMPLATE_STDOUT, REDIRECT_VN_CLI_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from config import (
+    TARI_DAN_BINS_FOLDER,
+    REDIRECT_TEMPLATE_STDOUT,
+    REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT,
+    USE_BINARY_EXECUTABLE,
+    DATA_FOLDER,
+)
 from ports import ports
 from dan_wallet_daemon import JrpcDanWalletDaemon
 from typing import Any
@@ -10,6 +16,8 @@ import re
 import os
 import array
 import subprocess
+
+cargo_install_generate_installed = False
 
 
 class Template:
@@ -24,6 +32,19 @@ class Template:
             os.makedirs(os.path.join(DATA_FOLDER, "templates"))
         except:
             pass
+
+        global cargo_install_generate_installed
+        if not cargo_install_generate_installed:
+            cargo_install_generate_installed = True
+            exec = ["cargo", "install", "cargo-generate"]
+            if REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT:
+                SubprocessWrapper.call(
+                    exec,
+                    stdout=open(os.path.join(DATA_FOLDER, "stdout", f"cargo_generate_install.log"), "a+"),
+                    stderr=subprocess.STDOUT,
+                )
+            else:
+                SubprocessWrapper.call(exec)
 
         exec = ["cargo", "generate", "--git", "https://github.com/tari-project/wasm-template.git", "-s", self.template, "-n", self.name]
         if REDIRECT_TEMPLATE_STDOUT:
