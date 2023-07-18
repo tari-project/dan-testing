@@ -61,7 +61,7 @@ class JrpcDanWalletDaemon:
     def transaction_submit_instruction(self, instruction, dump_buckets: bool = True):
         tx_id = 0
         if dump_buckets:
-            tx_id = self.call(
+            res = self.call(
                 "transactions.submit_instruction",
                 {
                     "instruction": instruction,
@@ -69,14 +69,17 @@ class JrpcDanWalletDaemon:
                     "dump_outputs_into": self.last_account_name,
                     "fee": 1000,
                 },
-            )["hash"]
+            )
+            tx_id = res["transaction_id"]
         else:
-            tx_id = self.call(
+            res = self.call(
                 "transactions.submit_instruction",
                 {"instruction": instruction, "fee_account": self.last_account_name, "fee": 1000},
-            )["hash"]
+            )
+            tx_id = res["transaction_id"]
         while True:
             tx = self.transaction_get(tx_id)
+            print(tx)
             status = tx["status"]
             if status != "Pending":
                 if status == "Rejected":
@@ -85,7 +88,7 @@ class JrpcDanWalletDaemon:
             time.sleep(1)
 
     def transaction_get(self, tx_id):
-        return self.call("transactions.get", {"hash": tx_id})
+        return self.call("transactions.get", {"transaction_id": tx_id})
 
     def claim_burn(self, burn: Any, account: Any):
         account = account["account"]["address"]["Component"]
