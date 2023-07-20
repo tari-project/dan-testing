@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { jsonRpc } from "../utils/json_rpc";
 
-function ShowInfo(name, node, log, stdoutLog) {
+function ShowInfo(name, node, log, stdoutLog, additional: React.JSX = null) {
+  const nameInfo = name && (
+    <div>
+      <pre></pre>
+      <b>Name</b>
+      {name}
+    </div>
+  );
   const jrpcInfo = node?.jrpc && (
     <div>
       <b>JRPC</b>
@@ -20,16 +27,8 @@ function ShowInfo(name, node, log, stdoutLog) {
       <a href={`http://${node.http}`}>{`http://${node.http}`}</a>
     </div>
   );
-  return (
-    <div className="info" key={name}>
-      <div>
-        <pre></pre>
-        <b>Name</b>
-        {name}
-      </div>
-      {httpInfo}
-      {jrpcInfo}
-      {grpcInfo}
+  const logInfo = log && (
+    <>
       <div>
         <b>Logs</b>
         <div>
@@ -51,6 +50,16 @@ function ShowInfo(name, node, log, stdoutLog) {
           ))}
         </div>
       </div>
+    </>
+  );
+  return (
+    <div className="info" key={name}>
+      {nameInfo}
+      {httpInfo}
+      {jrpcInfo}
+      {grpcInfo}
+      {logInfo}
+      {additional}
     </div>
   );
 }
@@ -74,6 +83,7 @@ export default function Main() {
   const [logs, setLogs] = useState({});
   const [stdoutLogs, setStdoutLogs] = useState({});
   const [connectorSample, setConnectorSample] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     jsonRpc("vns")
@@ -160,13 +170,28 @@ export default function Main() {
     });
     jsonRpc("grpc_node").then((resp) => setNode({ grpc: resp }));
   }, []);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    setSelectedFile(file);
+  };
+
+  const handleFileUpload = () => {
+    let address = import.meta.env.VITE_DAEMON_JRPC_ADDRESS || "localhost:9000";
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    fetch(`http://${address}/upload_template`, { method: "POST", body: formData }).then((resp) => {
+      console.log("resp", resp);
+    });
+  };
+
   return (
     <div className="main">
       <div className="label">Base layer</div>
       <div className="infos">
         {ShowInfo("node", node, logs?.["node"], stdoutLogs?.["node"])}
         {ShowInfo("wallet", wallet, logs?.["wallet"], stdoutLogs?.["wallet"])}
-        {ShowInfo("miner", null, logs?.["miner"], stdoutLogs?.["miner"])}
+        {ShowInfo("miner", null, logs?.["miner"], stdoutLogs?.["miner"], <button onClick={() => jsonRpc("mine", 1)}>Mine</button>)}
       </div>
       <div>
         <div className="label">Validator Nodes</div>
@@ -179,6 +204,19 @@ export default function Main() {
       <div>
         <div className="label">Indexers</div>
         {ShowInfos(indexers, logs, stdoutLogs, "indexer")}
+      </div>
+      <div className="label">Templates</div>
+      <div className="infos">
+        {ShowInfo(
+          null,
+          null,
+          null,
+          null,
+          <>
+            <input type="file" onChange={handleFileChange} />
+            <button onClick={handleFileUpload}>Upload template</button>
+          </>
+        )}
       </div>
       {connectorSample && (
         <div className="label">
