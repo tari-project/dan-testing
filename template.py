@@ -21,11 +21,13 @@ cargo_install_generate_installed = False
 
 
 class Template:
-    def __init__(self, template, name=None):
+    def __init__(self, template, name=None, from_source = True):
         self.template = template
         self.name = name or template
-        self.generate()
-        self.compile()
+        self.from_source = from_source
+        if from_source:
+            self.generate()
+            self.compile()
 
     def generate(self):
         try:
@@ -71,7 +73,7 @@ class Template:
             SubprocessWrapper.call(exec)
         os.chdir(wd)
 
-    def publish_template(self, jrpc_port: int, server_port: int, local_ip):
+    def publish_template(self, jrpc_port: int, server_port: int, local_ip: str):
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node_cli")]
         else:
@@ -85,26 +87,47 @@ class Template:
                 "--",
             ]
 
-        exec = [
-            *run,
-            "--vn-daemon-jrpc-endpoint",
-            f"/ip4/{local_ip}/tcp/{jrpc_port}",
-            "templates",
-            "publish",
-            "--binary-url",
-            f"http://localhost:{server_port}/templates/{self.name}/package/target/wasm32-unknown-unknown/release/{self.name}.wasm",
-            "--template-code-path",
-            os.path.join(DATA_FOLDER, "templates", self.name, "package"),
-            "--template-name",
-            f"{self.name}",
-            "--template-version",
-            "1",
-            "--template-type",
-            "wasm",
-        ]
+        if self.from_source:
+            exec = [
+                *run,
+                "--vn-daemon-jrpc-endpoint",
+                f"/ip4/{local_ip}/tcp/{jrpc_port}",
+                "templates",
+                "publish",
+                "--binary-url",
+                f"http://localhost:{server_port}/templates/{self.name}/package/target/wasm32-unknown-unknown/release/{self.name}.wasm",
+                "--template-code-path",
+                os.path.join(DATA_FOLDER, "templates", self.name, "package"),
+                "--template-name",
+                f"{self.name}",
+                "--template-version",
+                "1",
+                "--template-type",
+                "wasm",
+            ]
+        else:
+            exec = [
+                *run,
+                "--vn-daemon-jrpc-endpoint",
+                f"/ip4/{local_ip}/tcp/{jrpc_port}",
+                "templates",
+                "publish",
+                "--binary-url",
+                f"http://localhost:{server_port}/templates/{self.name}",
+                # "--template-code-path",
+                # os.path.join(DATA_FOLDER, "templates", self.name, "package"),
+                "--template-name",
+                f"{self.name}",
+                "--template-version",
+                "1",
+                "--template-type",
+                "wasm",
+            ]
+
         result = SubprocessWrapper.run(exec, stdout=subprocess.PIPE)
         if r := re.search(r"The template address will be ([0-9a-f]{64})", result.stdout.decode()):
             self.id = r.group(1)
+            print("Address:", self.id)
         else:
             print("Registration failed", result.stdout.decode())
 

@@ -1,16 +1,18 @@
+from commands import Commands
 from common_exec import CommonExec
 from config import DATA_FOLDER, WEBUI_PORT
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from jsonrpcserver import method, Result, Success, dispatch, InvalidParams, Error
 from ports import ports
 from subprocess_wrapper import SubprocessWrapper
+from template import Template
 from typing import Type, Any, Optional
-from commands import Commands
-import subprocess
-import threading
+import cgi
 import http
 import json
 import os
+import subprocess
+import threading
 import webbrowser
 
 
@@ -20,6 +22,25 @@ class JrpcHandler(BaseHTTPRequestHandler):
         super().__init__(request, client_address, server)
 
     def do_POST(self):
+        if self.path == '/upload_template':
+            content_type, _ = cgi.parse_header(self.headers['Content-Type'])
+            if content_type == 'multipart/form-data':
+                form_data = cgi.FieldStorage(
+                    fp=self.rfile,
+                    headers=self.headers,
+                    environ={'REQUEST_METHOD': 'POST'}
+                )
+                if 'file' in form_data:
+                    uploaded_file = form_data['file']
+                    f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename),"wb")
+                    f.write(uploaded_file.file.read())
+                    f.close()
+                    template = Template(uploaded_file.filename, from_source=False)
+                    template.publish_template(next(iter(self.commands.validator_nodes.values())).json_rpc_port, self.commands.server.port, self.commands.local_ip)
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    return
         # Process request
         request = self.rfile.read(int(self.headers["Content-Length"])).decode()
         self.define_methods()
