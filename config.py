@@ -1,13 +1,38 @@
 import os
 from typing import Any
 
+COLOR_RED = "\033[91m"
+COLOR_GREEN = "\033[92m"
+COLOR_YELLOW = "\033[93m"
+COLOR_BLUE = "\033[94m"
+COLOR_MAGENTA = "\033[95m"
+COLOR_CYAN = "\033[96m"
+COLOR_RESET = "\033[0m"
 
-def get_env_or_default(env_name: str, default: Any) -> Any:
+COLOR_BRIGHT_RED = "\033[91;1m"
+COLOR_BRIGHT_GREEN = "\033[92;1m"
+COLOR_BRIGHT_YELLOW = "\033[93;1m"
+COLOR_BRIGHT_BLUE = "\033[94;1m"
+COLOR_BRIGHT_MAGENTA = "\033[95;1m"
+COLOR_BRIGHT_CYAN = "\033[96;1m"
+
+NAME_COLOR = COLOR_BRIGHT_YELLOW
+EXEC_COLOR = COLOR_BRIGHT_GREEN
+PORT_COLOR = COLOR_BRIGHT_CYAN
+STEP_COLOR = COLOR_BRIGHT_YELLOW
+STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
+
+def is_boolstring(value:str):
+    return value.lower() in ["true", "false"]
+
+def get_env_or_default(env_name: str, default: Any, validation:Any = None) -> Any:
     if env_name in os.environ:
+        if validation:
+            if not validation(os.environ[env_name]):
+                print(f"Value {COLOR_BRIGHT_RED}{os.environ[env_name]}{COLOR_RESET} for {COLOR_BRIGHT_BLUE}{env_name}{COLOR_RESET} is not valid!")
+                exit()
         return os.environ[env_name]
     return default
-
-
 WEBUI_PORT = get_env_or_default("DAN_TESTING_WEBUI_PORT", "auto")
 DATA_FOLDER = get_env_or_default("DAN_TESTING_DATA_FOLDER", "Data")
 TARI_BINS_FOLDER = get_env_or_default("TARI_BINS_FOLDER", "bins")
@@ -47,32 +72,11 @@ BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = "DAN_TESTING_NO_FEES" in os.environ
 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
-STEPS_CREATE_ACCOUNT = get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true") == "true"
-STEPS_CREATE_TEMPLATE = get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "true") == "true"
+STEPS_CREATE_ACCOUNT = get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring).lower() == "true"
+STEPS_CREATE_TEMPLATE = get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "true", is_boolstring).lower() == "true"
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = "DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE" in os.environ
 STEPS_RUN_SIGNALLING_SERVER = True
 LISTEN_ONLY_ON_LOCALHOST = True
 
-COLOR_RED = "\033[91m"
-COLOR_GREEN = "\033[92m"
-COLOR_YELLOW = "\033[93m"
-COLOR_BLUE = "\033[94m"
-COLOR_MAGENTA = "\033[95m"
-COLOR_CYAN = "\033[96m"
-COLOR_RESET = "\033[0m"
-
-COLOR_BRIGHT_RED = "\033[91;1m"
-COLOR_BRIGHT_GREEN = "\033[92;1m"
-COLOR_BRIGHT_YELLOW = "\033[93;1m"
-COLOR_BRIGHT_BLUE = "\033[94;1m"
-COLOR_BRIGHT_MAGENTA = "\033[95;1m"
-COLOR_BRIGHT_CYAN = "\033[96;1m"
-
-NAME_COLOR = COLOR_BRIGHT_YELLOW
-EXEC_COLOR = COLOR_BRIGHT_GREEN
-PORT_COLOR = COLOR_BRIGHT_CYAN
-STEP_COLOR = COLOR_BRIGHT_YELLOW
-STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
-
 # If this is False, the cli_loop will be called instead
-STRESS_TEST = False
+STRESS_TEST = get_env_or_default("DAN_TESTING_STEPS_STRESS_TEST", "false", is_boolstring).lower() == "true"
