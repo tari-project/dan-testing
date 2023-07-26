@@ -23,7 +23,10 @@ STEP_COLOR = COLOR_BRIGHT_YELLOW
 STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
 
 def is_boolstring(value:str):
-    return value.lower() in ["true", "false"]
+    return value.lower() in ["false", "true", "0", "1"]
+
+def is_boolstring_true(value:str):
+    return value.lower() in ["true", "1"]
 
 def get_env_or_default(env_name: str, default: Any, validation:Any = None) -> Any:
     if env_name in os.environ:
@@ -72,11 +75,12 @@ BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = "DAN_TESTING_NO_FEES" in os.environ
 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
-STEPS_CREATE_ACCOUNT = get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring).lower() == "true"
-STEPS_CREATE_TEMPLATE = get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "true", is_boolstring).lower() == "true"
+STEPS_CREATE_ACCOUNT = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring))
+STEPS_CREATE_TEMPLATE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "true", is_boolstring))
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = "DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE" in os.environ
 STEPS_RUN_SIGNALLING_SERVER = True
 LISTEN_ONLY_ON_LOCALHOST = True
 
 # If this is False, the cli_loop will be called instead
-STRESS_TEST = get_env_or_default("DAN_TESTING_STEPS_STRESS_TEST", "false", is_boolstring).lower() == "true"
+STRESS_TEST = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_STRESS_TEST", "false", is_boolstring))
+
