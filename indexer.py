@@ -103,3 +103,6 @@ class JrpcIndexer:
 
     def get_substate(self, address: str, version: int):
         return self.call("get_substate", [address, version])
+
+    def get_epoch_manager_stats(self):
+        return self.call("get_epoch_manager_stats")
