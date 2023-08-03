@@ -6,7 +6,7 @@ from config import (
     TARI_DAN_BINS_FOLDER,
     BURN_AMOUNT,
     COLOR_RESET,
-    CREATE_ACCOUNTS_PER_WALLET,
+    CREATE_ACCOUNTS,
     DATA_FOLDER,
     DEFAULT_TEMPLATE_FUNCTION,
     DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE,
@@ -15,7 +15,7 @@ from config import (
     LISTEN_ONLY_ON_LOCALHOST,
     SPAWN_INDEXERS,
     SPAWN_VNS,
-    SPAWN_WALLETS_PER_INDEXER,
+    SPAWN_WALLETS,
     STEP_COLOR,
     STEP_OUTER_COLOR,
     STEPS_CREATE_ACCOUNT,
@@ -46,10 +46,12 @@ import socket
 import time
 import traceback
 import webbrowser
+from typing import Any
 
 validator_nodes: dict[int, ValidatorNode] = {}
 indexers: dict[int, Indexer] = {}
 dan_wallets: dict[int, DanWalletDaemon] = {}
+accounts : dict[str, Any] = {}
 
 local_ip = "127.0.0.1"
 if not LISTEN_ONLY_ON_LOCALHOST:
@@ -67,7 +69,7 @@ print(local_ip)
 
 
 def cli_loop():
-    global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server
+    global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server, accounts
     commands = Commands(
         local_ip, wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server, signaling_server
     )
@@ -244,36 +246,44 @@ def cli_loop():
 
 def stress_test():
     global wallet, base_node, miner, dan_wallets, indexers, validator_nodes, tari_connector_sample, server
+    global total_num_of_tx
+    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
+    total_num_of_tx = 0
 
-    num_of_tx = 1  # this is how many times we send the funds back and forth for each of two wallets
-
-    def send_tx(src_id: int, dst_id: int):
-        src_account = dan_wallets[src_id].jrpc_client.accounts_list()[("accounts")][0]
-        dst_account = dan_wallets[dst_id].jrpc_client.accounts_list()[("accounts")][0]
+    def send_tx(account0: int, account1: int):
+        global total_num_of_tx
         res_addr = [1] * 32
-        src_public_key = src_account["public_key"]
-        dst_public_key = dst_account["public_key"]
+        acc0, dan0 = accounts[account0]
+        acc1, dan1 = accounts[account1]
+        public_key0 = acc0["public_key"]
+        public_key1 = acc1["public_key"]
         for i in range(num_of_tx):
-            print(f"tx {src_id} -> {dst_id} ({i})")
+            print(f"tx {account0} -> {account1} ({i})")
             # dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
             # dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
-            dan_wallets[src_id].jrpc_client.transfer(src_account, 1, res_addr, dst_public_key, 2000)
-            # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 1)
+            dan0.jrpc_client.transfer(acc0, 1, res_addr, public_key1, 2000)
+            total_num_of_tx += 1
+            # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 2000)
 
     # We will send back and forth between two wallets. So with n*2 wallets we have n concurrent TXs
     start = time.time()
-    for i in range(SPAWN_WALLETS_PER_INDEXER // 2):
-        threads.add(send_tx, (i * 2, i * 2 + 1))
+    threads.set_semaphore_limit(0)
+    for id in range(0,len(accounts.keys())-1,2):
+            id1 = list(accounts.keys())[id]
+            id2 = list(accounts.keys())[id+1]
+            threads.add(send_tx, (id1,id2))
 
     threads.wait()
 
     total_time = time.time() - start
 
-    total_num_of_tx = SPAWN_WALLETS_PER_INDEXER // 2 * num_of_tx * 2
-    print(f"Total number of Tx {total_num_of_tx}")
-    print(f"Total time {total_time}")
-    print(f"Number of concurrent TXs : {SPAWN_WALLETS_PER_INDEXER//2}")
-    print(f"Avg time for one TX {total_time/total_num_of_tx}")
+    if total_num_of_tx:
+        print(f"Total number of Tx {total_num_of_tx}")
+        print(f"Total time {total_time}")
+        print(f"Number of concurrent TXs : {SPAWN_WALLETS//2}")
+        print(f"Avg time for one TX {total_time/total_num_of_tx}")
+    else:
+        print("No TXs")
 
 
 def print_step(step_name: str):
@@ -297,6 +307,26 @@ def wait_for_vns_to_sync():
             ):
                 print(
                     [vn.jrpc_client.get_epoch_manager_stats()["current_block_height"] for vn in validator_nodes.values()],
+                    base_node.grpc_client.get_tip() - 3,
+                    end="\033[K\r",
+                )
+                time.sleep(1)
+            break
+        except:
+            time.sleep(1)
+    print("done\033[K")
+
+def wait_for_indexers_to_sync():
+    print("Waiting for Indexers to  sync to", base_node.grpc_client.get_tip())
+    # We have to check if VNs are already running their jrpc server
+    while True:
+        try:
+            while any(
+                indexer.jrpc_client.get_epoch_manager_stats()["current_block_height"] != base_node.grpc_client.get_tip() - 3
+                for indexer in indexers.values()
+            ):
+                print(
+                    [indexer.jrpc_client.get_epoch_manager_stats()["current_block_height"] for indexer in indexers.values()],
                     base_node.grpc_client.get_tip() - 3,
                     end="\033[K\r",
                 )
@@ -360,7 +390,7 @@ try:
     # Set ports for miner
     miner = Miner(base_node.grpc_port, wallet.grpc_port, local_ip)
     # Mine some blocks
-    miner.mine((SPAWN_VNS + SPAWN_INDEXERS * SPAWN_WALLETS_PER_INDEXER) * 2 + 13)  # Make sure we have enough funds
+    miner.mine((SPAWN_VNS + SPAWN_INDEXERS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
     # Start VNs
     print_step("CREATING VNS")
     for vn_id in range(SPAWN_VNS):
@@ -401,7 +431,7 @@ try:
         print_step("STARTING INDEXERS")
 
         def spawn_indexer(id: int):
-            indexers[id] = Indexer(id, base_node.grpc_port, local_ip, [validator_nodes[vn_id].get_address() for vn_id in validator_nodes])
+            indexers[id] = Indexer(id, base_node.grpc_port, local_ip, [validator_nodes[vn].get_address() for vn in validator_nodes])
             time.sleep(1)
             # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
             # to start comms
@@ -411,15 +441,16 @@ try:
                 pass
 
         for id in range(SPAWN_INDEXERS):
-            threads.add(spawn_indexer, (id,))
+            threads.add(spawn_indexer,  (id,))
 
         threads.wait()
+        wait_for_indexers_to_sync()
         # connections = indexer.jrpc_client.get_connections()
         # comms_stats = indexer.jrpc_client.get_comms_stats()
         # print(connections)
         # print(comms_stats)
 
-    if SPAWN_INDEXERS == 0 and SPAWN_WALLETS_PER_INDEXER > 0:  # type: ignore
+    if SPAWN_INDEXERS == 0 and SPAWN_WALLETS > 0:  # type: ignore
         raise Exception("Can't create a wallet when there is no indexer")
 
     signaling_server_jrpc_port = None
@@ -432,23 +463,22 @@ try:
     def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
         dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer_jrpc, signaling_server_jrpc, local_ip)
 
-    for indexer_id in range(SPAWN_INDEXERS):
-        for dwallet_id in range(SPAWN_WALLETS_PER_INDEXER):
-            # vn_id = min(SPAWN_VNS - 1, dwallet_id)
-            if indexers and signaling_server_jrpc_port:
-                threads.add(
-                    create_wallet,
-                    (
-                        dwallet_id + indexer_id * SPAWN_WALLETS_PER_INDEXER,
-                        indexers[indexer_id].json_rpc_port,
-                        signaling_server_jrpc_port,
-                    ),
-                )
+    for dwallet_id in range(SPAWN_WALLETS):
+        if indexers and signaling_server_jrpc_port:
+            threads.add(
+                create_wallet,
+                (
+                    dwallet_id,
+                    indexers[dwallet_id % SPAWN_INDEXERS].json_rpc_port,
+                    signaling_server_jrpc_port,
+                ),
+            )
 
     threads.wait()
 
     miner.mine(23)
     wait_for_vns_to_sync()
+    wait_for_indexers_to_sync()
 
     def spawn_wallet(d_id: int):
         while True:
@@ -459,10 +489,9 @@ try:
                 time.sleep(1)
         print(f"Dan Wallet {d_id} created")
 
-    for indexer_id in range(SPAWN_INDEXERS):
-        for d_id in range(SPAWN_WALLETS_PER_INDEXER):
-            print("....")
-            threads.add(spawn_wallet, (d_id + indexer_id * SPAWN_WALLETS_PER_INDEXER,))
+    for dwallet_id in dan_wallets:
+        print("....")
+        threads.add(spawn_wallet, (dwallet_id,))
 
     threads.wait()
     if STEPS_CREATE_TEMPLATE:
@@ -475,23 +504,36 @@ try:
         # Wait for the VNs to pickup the blocks from base layer
         # TODO wait for VN to download and activate the template
     wait_for_vns_to_sync()
+    wait_for_indexers_to_sync()
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
         start = time.time()
 
-        def create_account(i: int, id: int, amount: int):
-            name = {"Name": f"TestAccount_{i+id*CREATE_ACCOUNTS_PER_WALLET}"}
-            dan_wallet_jrpc = dan_wallets[id].jrpc_client
+        def create_account(i: int, amount: int):
+            name = {"Name": f"TestAccount_{i}"}
+            dan_wallet_jrpc = dan_wallets[i % SPAWN_WALLETS].jrpc_client
             print(f"Account {name} creation started")
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
 
-        for i in range(CREATE_ACCOUNTS_PER_WALLET):
-            for id in dan_wallets:
-                threads.add(create_account, (i, id, 12345))
+        threads.set_semaphore_limit(5)
+        for i in range(CREATE_ACCOUNTS):
+            threads.add(create_account, (i, 10000000))
         threads.wait()
+        threads.set_semaphore_limit(10)
 
+        for did in dan_wallets:
+            while True:
+                accs = dan_wallets[did].jrpc_client.accounts_list(0, CREATE_ACCOUNTS)["accounts"]
+                print("accs",len(accs), end="\r")
+                if len(accs) != CREATE_ACCOUNTS // SPAWN_WALLETS + (did < CREATE_ACCOUNTS % SPAWN_WALLETS and 1 or 0):
+                    time.sleep(1)
+                else:
+                    break
+            for acc in accs:
+                accounts[acc["account"]["name"]] = (acc, dan_wallets[did])
+        print()
         # burns = {}
         # accounts = {}
         # print_step(f"BURNING {BURN_AMOUNT}")
