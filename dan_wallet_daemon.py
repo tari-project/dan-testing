@@ -144,7 +144,7 @@ class DanWalletDaemon(CommonExec):
             "--network",
             "localnet",
             "--json-rpc-address",
-            f"0.0.0.0:{self.json_rpc_port}",
+            f"127.0.0.1:{self.json_rpc_port}",
             "--indexer_url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
             "-p",
