@@ -2,7 +2,7 @@
 import socket, errno
 import sys
 import threading
-from config import NAME_COLOR, COLOR_RESET, COLOR_BRIGHT_CYAN
+from Common.config import NAME_COLOR, COLOR_RESET, COLOR_BRIGHT_CYAN
 
 
 def is_port_used(port):

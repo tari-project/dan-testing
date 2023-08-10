@@ -1,19 +1,22 @@
+from Collections.validator_nodes import validator_nodes
 from commands import Commands
-from common_exec import CommonExec
-from config import DATA_FOLDER, WEBUI_PORT
+from Common.config import DATA_FOLDER, WEBUI_PORT
+from Common.local_ip import local_ip
+from Common.ports import ports
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from jsonrpcserver import method, Result, Success, dispatch, InvalidParams, Error
-from ports import ports
-from subprocess_wrapper import SubprocessWrapper
-from template import Template
-from typing import Type, Any, Optional
+from Processes.base_node import base_node
+from Processes.common_exec import CommonExec
+from Processes.subprocess_wrapper import SubprocessWrapper
+from Processes.template import Template
+from Processes.wallet import wallet
+from typing import Any, Optional
 import cgi
-import http
-import json
 import os
 import subprocess
 import threading
 import webbrowser
+import traceback
 
 
 class JrpcHandler(BaseHTTPRequestHandler):
@@ -22,23 +25,19 @@ class JrpcHandler(BaseHTTPRequestHandler):
         super().__init__(request, client_address, server)
 
     def do_POST(self):
-        if self.path == '/upload_template':
-            content_type, _ = cgi.parse_header(self.headers['Content-Type'])
-            if content_type == 'multipart/form-data':
-                form_data = cgi.FieldStorage(
-                    fp=self.rfile,
-                    headers=self.headers,
-                    environ={'REQUEST_METHOD': 'POST'}
-                )
-                if 'file' in form_data:
-                    uploaded_file = form_data['file']
-                    f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename),"wb")
+        if self.path == "/upload_template":
+            content_type, _ = cgi.parse_header(self.headers["Content-Type"])
+            if content_type == "multipart/form-data":
+                form_data = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={"REQUEST_METHOD": "POST"})
+                if "file" in form_data:
+                    uploaded_file = form_data["file"]
+                    f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename), "wb")
                     f.write(uploaded_file.file.read())
                     f.close()
                     template = Template(uploaded_file.filename, from_source=False)
-                    template.publish_template(next(iter(self.commands.validator_nodes.values())).json_rpc_port, self.commands.server.port, self.commands.local_ip)
+                    template.publish_template(validator_nodes.any_node().json_rpc_port, self.commands.server.port, self.commands.local_ip)
                     self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
+                    self.send_header("Content-type", "text/html")
                     self.end_headers()
                     return
         # Process request
@@ -62,6 +61,10 @@ class JrpcHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type")
         self.end_headers()
 
+    def log_message(self, format: str, *args: Any) -> None:
+        # This will shutdown the logs to stdout
+        return
+
     def define_methods(self):
         @method
         def ping() -> Result:
@@ -70,8 +73,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
         @method
         def vns() -> Result:
             res = {}
-            for id in self.commands.validator_nodes:
-                res[id] = self.commands.validator_nodes[id].get_info_for_ui()
+            for id in validator_nodes:
+                res[id] = validator_nodes[id].get_info_for_ui()
             return Success(res)
 
         @method
@@ -183,11 +186,11 @@ class JrpcHandler(BaseHTTPRequestHandler):
                                     logs.append((os.path.join(path, file), os.path.split(path)[1], os.path.splitext(file)[0]))
                     return Success(logs)
                 if what == "node":
-                    return Success(self.commands.base_node.get_logs())
+                    return Success(base_node.get_logs())
                 if what == "miner":
                     return Success(self.commands.miner.get_logs())
                 if what == "wallet":
-                    return Success(self.commands.wallet.get_logs())
+                    return Success(wallet.get_logs())
                 if what == "connector":
                     return Success(self.commands.tari_connector_sample.get_logs())
                 if what == "signaling_server":
@@ -197,8 +200,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 what, index = what.split(" ")
                 index = int(index)
                 if what == "vn":
-                    if index in self.commands.validator_nodes:
-                        return Success(self.commands.validator_nodes[index].get_logs())
+                    if index in validator_nodes:
+                        return Success(validator_nodes[index].get_logs())
                 if what == "dan":
                     if index in self.commands.dan_wallets:
                         return Success(self.commands.dan_wallets[index].get_logs())
@@ -220,11 +223,11 @@ class JrpcHandler(BaseHTTPRequestHandler):
                             logs.append((os.path.join(path, file), os.path.splitext(file)[0]))
                     return Success(logs)
                 if what == "node":
-                    return Success(self.commands.base_node.get_stdout())
+                    return Success(base_node.get_stdout())
                 if what == "miner":
                     return Success(self.commands.miner.get_stdout())
                 if what == "wallet":
-                    return Success(self.commands.wallet.get_stdout())
+                    return Success(wallet.get_stdout())
                 if what == "connector":
                     return Success(self.commands.tari_connector_sample.get_stdout())
                 if what == "signaling_server":
@@ -234,8 +237,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 what, index = what.split(" ")
                 index = int(index)
                 if what == "vn":
-                    if index in self.commands.validator_nodes:
-                        return Success(self.commands.validator_nodes[index].get_stdout())
+                    if index in validator_nodes:
+                        return Success(validator_nodes[index].get_stdout())
                 if what == "dan":
                     if index in self.commands.dan_wallets:
                         return Success(self.commands.dan_wallets[index].get_stdout())
@@ -285,7 +288,7 @@ class WebuiServer(CommonExec):
 
 
 class JrpcWebuiServer:
-    def __init__(self, local_ip: str, commands: Commands):
+    def __init__(self, commands: Commands):
         self.port: int = ports.get_free_port("JRPC Server")
         server_address: tuple[str, int] = ("0.0.0.0", self.port)
         self.httpd = JrpcServer(commands, server_address, JrpcHandler)

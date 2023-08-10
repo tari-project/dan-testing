@@ -9,11 +9,11 @@ except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
-from config import TARI_BINS_FOLDER, NETWORK, REDIRECT_BASE_NODE_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_BASE_NODE_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import os
 import re
 import time
-from common_exec import CommonExec
+from Processes.common_exec import CommonExec
 
 
 class GrpcBaseNode:
@@ -52,7 +52,10 @@ class GrpcBaseNode:
 
 
 class BaseNode(CommonExec):
-    def __init__(self, local_ip: str):
+    def __init__(self):
+        pass
+
+    def start(self, local_ip: str):
         super().__init__("Base_node")
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
@@ -102,8 +105,13 @@ class BaseNode(CommonExec):
             time.sleep(1)
         f = open(base_node_id_file_name, "rt")
         content = "".join(f.readlines())
-        node_id, public_key, public_address = re.search(
-            r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content
-        ).groups()
+        node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
+
+    def stop(self):
+        print(f'To run base node : {" ".join(self.exec).replace("-n ", "")}')
+        raise Exception("Base node cannot be stopped")
+
+
+base_node: BaseNode = BaseNode()

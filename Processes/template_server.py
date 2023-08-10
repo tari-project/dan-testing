@@ -1,7 +1,7 @@
 # type:ignore
-from config import DATA_FOLDER
+from Common.config import DATA_FOLDER
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from ports import ports
+from Common.ports import ports
 import threading
 import os
 

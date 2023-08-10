@@ -1,14 +1,15 @@
 # type:ignore
 
-from ports import ports
-from config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
-from subprocess_wrapper import SubprocessWrapper
+from Common.ports import ports
+from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
 import time
 import re
 import requests
-from common_exec import CommonExec
+from Processes.common_exec import CommonExec
+from Common.local_ip import local_ip
 
 
 class JrpcValidatorNode:
@@ -36,7 +37,7 @@ class JrpcValidatorNode:
 
 
 class ValidatorNode(CommonExec):
-    def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, local_ip, peers=[]):
+    def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):
         super().__init__("Validator_node", node_id)
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
@@ -96,9 +97,7 @@ class ValidatorNode(CommonExec):
             time.sleep(1)
         f = open(validator_node_id_file_name, "rt")
         content = "".join(f.readlines())
-        node_id, public_key, public_address = re.search(
-            r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content
-        ).groups()
+        node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
 

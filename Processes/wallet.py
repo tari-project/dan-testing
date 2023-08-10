@@ -9,9 +9,9 @@ except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
-from config import TARI_BINS_FOLDER, NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from typing import Any
-from common_exec import CommonExec
+from Processes.common_exec import CommonExec
 import time
 import os
 
@@ -40,7 +40,10 @@ class GrpcWallet:
 
 
 class Wallet(CommonExec):
-    def __init__(self, base_node_address, local_ip):
+    def __init__(self):
+        pass
+
+    def start(self, base_node_address, local_ip):
         super().__init__("Wallet")
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
@@ -84,3 +87,10 @@ class Wallet(CommonExec):
             except:
                 pass
             time.sleep(1)
+
+    def stop(self):
+        print(f'To run the wallet : {" ".join(self.exec).replace("-n ", "")}')
+        raise Exception("Base node cannot be stopped")
+
+
+wallet = Wallet()

@@ -2,7 +2,7 @@
 import subprocess
 import platform
 from typing import Any
-from config import TARI_DAN_BINS_FOLDER, TARI_BINS_FOLDER
+from Common.config import TARI_DAN_BINS_FOLDER, TARI_BINS_FOLDER
 
 
 class SubprocessWrapper:

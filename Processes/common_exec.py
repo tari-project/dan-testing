@@ -1,19 +1,23 @@
 import os
 import signal
-from subprocess_wrapper import SubprocessWrapper
+from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
-from ports import ports
+from Common.ports import ports
 from typing import Optional, Any, Union
-from config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
+from Common.config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import psutil
 import os
+import traceback
 
 
 def kill_process_tree(pid: int):
+    print("kill_process_tree", pid)
     try:
         parent = psutil.Process(pid)
+        print("parent", parent)
         children = parent.children(recursive=True)
         for child in children:
+            print("child", child)
             child.send_signal(signal.SIGTERM)
         parent.send_signal(signal.SIGTERM)
     except psutil.NoSuchProcess:
@@ -49,20 +53,31 @@ class CommonExec:
             self.process = SubprocessWrapper.Popen(self.exec, stdin=subprocess.PIPE, env={**env, **self.env}, cwd=cwd)
 
     def __del__(self):
-        print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
-        print(f"To run {EXEC_COLOR}{' '.join(self.exec)}{COLOR_RESET}", end=" ")
-        if self.env:
-            print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
-        print()
-        if self.process:
-            try:
-                self.process.send_signal(signal.CTRL_C_EVENT)
-            except:
-                pass
-            kill_process_tree(self.process.pid)
+        try:
+            print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
+            print(f"To run {EXEC_COLOR}{' '.join(self.exec)}{COLOR_RESET}", end=" ")
+            if self.env:
+                print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
+            print()
             if self.process:
-                self.process.kill()
-            del self.process
+                # try:
+                #     print("CTRL_C_EVENT")
+                #     self.process.send_signal(signal.SIGBREAK)
+                #     self.process.send_signal(signal.SIGBREAK)
+                # except:
+                #     pass
+                # print("kill_process_tree")
+                kill_process_tree(self.process.pid)
+                if self.process:
+                    print("kill")
+                    self.process.terminate()
+                    self.process.kill()
+                del self.process
+            print(f"Killed successfuly {NAME_COLOR}{self.name}{COLOR_RESET}")
+        except Exception as e:
+            print(e)
+            print("Something went wrong")
+        # traceback.print_stack()
 
     def get_logs(self):
         logs: list[tuple[str, str, str]] = []

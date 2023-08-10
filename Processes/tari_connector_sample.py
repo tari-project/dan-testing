@@ -1,11 +1,11 @@
 # type:ignore
-from config import REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
-from ports import ports
+from Common.config import REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
+from Common.ports import ports
 import os
-from subprocess_wrapper import SubprocessWrapper
+from Processes.subprocess_wrapper import SubprocessWrapper
 import signal
 import subprocess
-from common_exec import CommonExec
+from Processes.common_exec import CommonExec
 
 
 class TariConnectorSample(CommonExec):

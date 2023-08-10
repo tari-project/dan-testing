@@ -14,13 +14,14 @@ class Threads:
             self.semaphore = None
 
     def add(self, target: Callable[..., None], args: Any):
-        def thread_target(target : Callable[..., None], args: Any):
+        def thread_target(target: Callable[..., None], args: Any):
             if self.semaphore:
                 self.semaphore.acquire()
             target(*args)
             if self.semaphore:
                 self.semaphore.release()
-        thread = threading.Thread(target=thread_target,  args=(target,args))
+
+        thread = threading.Thread(target=thread_target, args=(target, args))
         self.threads.append(thread)
         thread.start()
 

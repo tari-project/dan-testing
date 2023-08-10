@@ -22,13 +22,16 @@ PORT_COLOR = COLOR_BRIGHT_CYAN
 STEP_COLOR = COLOR_BRIGHT_YELLOW
 STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
 
-def is_boolstring(value:str):
+
+def is_boolstring(value: str):
     return value.lower() in ["false", "true", "0", "1"]
 
-def is_boolstring_true(value:str):
+
+def is_boolstring_true(value: str):
     return value.lower() in ["true", "1"]
 
-def get_env_or_default(env_name: str, default: Any, validation:Any = None) -> Any:
+
+def get_env_or_default(env_name: str, default: Any, validation: Any = None) -> Any:
     if env_name in os.environ:
         if validation:
             if not validation(os.environ[env_name]):
@@ -36,6 +39,8 @@ def get_env_or_default(env_name: str, default: Any, validation:Any = None) -> An
                 exit()
         return os.environ[env_name]
     return default
+
+
 WEBUI_PORT = get_env_or_default("DAN_TESTING_WEBUI_PORT", "auto")
 DATA_FOLDER = get_env_or_default("DAN_TESTING_DATA_FOLDER", "Data")
 TARI_BINS_FOLDER = get_env_or_default("TARI_BINS_FOLDER", "bins")
@@ -60,20 +65,21 @@ REDIRECT_DAN_WALLET_WEBUI_STDOUT = True
 REDIRECT_SIGNALING_STDOUT = True
 NETWORK = "localnet"
 SPAWN_VNS = int(get_env_or_default("DAN_TESTING_SPAWN_VNS", 1))
-print('SPAWN_VNS', SPAWN_VNS)
+print("SPAWN_VNS", SPAWN_VNS)
 SPAWN_INDEXERS = int(get_env_or_default("DAN_TESTING_SPAWN_INDEXERS", 1))
-print('SPAWN_INDEXERS', SPAWN_INDEXERS)
+print("SPAWN_INDEXERS", SPAWN_INDEXERS)
 SPAWN_WALLETS = int(get_env_or_default("DAN_TESTING_SPAWN_WALLETS", 1))
-print('SPAWN_WALLETS', SPAWN_WALLETS)
+print("SPAWN_WALLETS", SPAWN_WALLETS)
 CREATE_ACCOUNTS = int(get_env_or_default("DAN_TESTING_CREATE_ACCOUNTS", 2))
-print('CREATE_ACCOUNTS', CREATE_ACCOUNTS)
+print("CREATE_ACCOUNTS", CREATE_ACCOUNTS)
 # Any one of the templates from `wasm_template`
 TEMPLATES = get_env_or_default("DAN_TESTING_TEMPLATES", "fungible,swap")
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
 # use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
 DEFAULT_TEMPLATE_FUNCTION = get_env_or_default(
-    "DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION", 'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"'
+    "DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION",
+    'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"',
 )
 BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "true", is_boolstring))
@@ -87,4 +93,3 @@ LISTEN_ONLY_ON_LOCALHOST = True
 
 # If this is False, the cli_loop will be called instead
 STRESS_TEST = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_STRESS_TEST", "false", is_boolstring))
-
