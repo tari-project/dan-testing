@@ -22,8 +22,9 @@ class Ports:
     def __init__(self):
         self.last_used = 18003
         self.mutex = threading.Lock()
+        self.assigned_ports = {}
 
-    def get_free_port(self, name: str) -> int:
+    def assign_port(self, name: str) -> int:
         self.mutex.acquire()
         self.last_used += 1
         while is_port_used(self.last_used):
@@ -33,6 +34,12 @@ class Ports:
         print(f"Port {COLOR_BRIGHT_CYAN}{self.last_used}{COLOR_RESET} has been assigned to {NAME_COLOR}{name}{COLOR_RESET}")
         sys.stdout.flush()
         return last_used
+
+    def get_free_port(self, name: str) -> int:
+        if name in self.assigned_ports:
+            return self.assigned_ports[name]
+        self.assigned_ports[name] = self.assign_port(name)
+        return self.assigned_ports[name]
 
 
 ports = Ports()
