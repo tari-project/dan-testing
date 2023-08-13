@@ -435,7 +435,7 @@ try:
         # Publish template
         print_step("PUBLISHING TEMPLATE")
         for t in templates.values():
-            t.publish_template(next(iter(validator_nodes.values())).json_rpc_port, server.port, local_ip)
+            t.publish_template(validator_nodes.any_node().json_rpc_port, server.port, local_ip)
         miner.mine(4)
 
         # Wait for the VNs to pickup the blocks from base layer

@@ -35,7 +35,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
                     f.write(uploaded_file.file.read())
                     f.close()
                     template = Template(uploaded_file.filename, from_source=False)
-                    template.publish_template(validator_nodes.any_node().json_rpc_port, self.commands.server.port, self.commands.local_ip)
+                    template.publish_template(validator_nodes.any_node().json_rpc_port, self.commands.server.port, local_ip)
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
                     self.end_headers()
