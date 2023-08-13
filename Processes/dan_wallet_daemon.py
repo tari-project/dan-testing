@@ -1,14 +1,14 @@
 # type:ignore
-from config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import base64
 import os
 import requests
 import socket
 import time
 from typing import Any, Optional
-from common_exec import CommonExec
-from stats import stats
-from subprocess_wrapper import SubprocessWrapper
+from Processes.common_exec import CommonExec
+from Stats.stats import stats
+from Processes.subprocess_wrapper import SubprocessWrapper
 from threading import Lock
 import subprocess
 
@@ -116,9 +116,7 @@ class JrpcDanWalletDaemon:
 
     def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int]):
         id = stats.start_run("accounts.create_free_test_coins")
-        res = self.call(
-            "accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee]
-        )
+        res = self.call("accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
         stats.end_run(id)
         return res
 

@@ -1,5 +1,5 @@
 import sqlite3
-from config import DATA_FOLDER
+from Common.config import DATA_FOLDER
 
 
 def copy_data(source_db, destination_db, source_name):

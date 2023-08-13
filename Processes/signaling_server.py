@@ -1,8 +1,8 @@
 # type:ignore
 import os
 import time
-from config import TARI_DAN_BINS_FOLDER, USE_BINARY_EXECUTABLE, REDIRECT_SIGNALING_STDOUT, DATA_FOLDER
-from common_exec import CommonExec
+from Common.config import TARI_DAN_BINS_FOLDER, USE_BINARY_EXECUTABLE, REDIRECT_SIGNALING_STDOUT, DATA_FOLDER
+from Processes.common_exec import CommonExec
 
 
 class SignalingServer(CommonExec):

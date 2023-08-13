@@ -1,13 +1,16 @@
 # type:ignore
 
-from config import TARI_BINS_FOLDER, NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
-from subprocess_wrapper import SubprocessWrapper
+from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
 
 
 class Miner:
-    def __init__(self, base_node_grpc_port, wallet_grpc_port, local_ip):
+    def __init__(self):
+        pass
+
+    def start(self, base_node_grpc_port, wallet_grpc_port, local_ip):
         self.name = "miner"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_BINS_FOLDER, "tari_miner")]
@@ -33,9 +36,7 @@ class Miner:
         self.exec = list(self.exec_template)
         self.exec[self.exec.index("#blocks")] = str(blocks)
         if REDIRECT_MINER_STDOUT:
-            self.process = SubprocessWrapper.call(
-                self.exec, stdout=open(os.path.join(DATA_FOLDER, "stdout", "miner.log"), "a+"), stderr=subprocess.STDOUT
-            )
+            self.process = SubprocessWrapper.call(self.exec, stdout=open(os.path.join(DATA_FOLDER, "stdout", "miner.log"), "a+"), stderr=subprocess.STDOUT)
         else:
             self.process = SubprocessWrapper.call(self.exec)
 
@@ -54,3 +55,6 @@ class Miner:
                 if self.name in file:
                     logs.append((os.path.join(path, file), "stdout"))
         return logs
+
+
+miner = Miner()

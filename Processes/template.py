@@ -1,17 +1,17 @@
 # type:ignore
 import struct
 
-from config import (
+from Common.config import (
     TARI_DAN_BINS_FOLDER,
     REDIRECT_TEMPLATE_STDOUT,
     REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT,
     USE_BINARY_EXECUTABLE,
     DATA_FOLDER,
 )
-from ports import ports
-from dan_wallet_daemon import JrpcDanWalletDaemon
+from Common.ports import ports
+from Processes.dan_wallet_daemon import JrpcDanWalletDaemon
 from typing import Any
-from subprocess_wrapper import SubprocessWrapper
+from Processes.subprocess_wrapper import SubprocessWrapper
 import re
 import os
 import array
@@ -21,7 +21,7 @@ cargo_install_generate_installed = False
 
 
 class Template:
-    def __init__(self, template, name=None, from_source = True):
+    def __init__(self, template, name=None, from_source=True):
         self.template = template
         self.name = name or template
         self.from_source = from_source
@@ -131,9 +131,7 @@ class Template:
         else:
             print("Registration failed", result.stdout.decode())
 
-    def call_function(
-        self, function_name: str, dan_wallet_client: JrpcDanWalletDaemon, params: list[Any] = [], dump_into_account: bool = True
-    ):
+    def call_function(self, function_name: str, dan_wallet_client: JrpcDanWalletDaemon, params: list[Any] = [], dump_into_account: bool = True):
         for p in range(len(params)):
             if params[p].startswith("w:"):
                 params[p] = f"Workspace({params[p][2:]})"

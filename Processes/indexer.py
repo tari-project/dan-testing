@@ -1,13 +1,13 @@
 # type:ignore
 
-from config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
-from ports import ports
+from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.ports import ports
 import os
 import time
 import re
 import requests
-from subprocess_wrapper import SubprocessWrapper
-from common_exec import CommonExec
+from Processes.subprocess_wrapper import SubprocessWrapper
+from Processes.common_exec import CommonExec
 
 
 class Indexer(CommonExec):
@@ -75,9 +75,7 @@ class Indexer(CommonExec):
             time.sleep(1)
         f = open(indexer_id_file_name, "rt")
         content = "".join(f.readlines())
-        node_id, public_key, public_address = re.search(
-            r'"node_id":"(.*?)","public_key":"(.*?)".*"public_address":"(.*?)"', content
-        ).groups()
+        node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_address":"(.*?)"', content).groups()
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
 
