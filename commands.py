@@ -14,6 +14,8 @@ from Processes.validator_node import ValidatorNode
 from Processes.wallet import Wallet
 from typing import Optional
 from Collections.validator_nodes import validator_nodes
+from Collections.indexers import indexers
+from Collections.dan_wallet_daemons import dan_wallets
 from Common.local_ip import local_ip
 import os
 import base64
@@ -23,18 +25,17 @@ import json
 class Commands:
     def __init__(
         self,
-        dan_wallets: dict[int, DanWalletDaemon],
-        indexers: dict[int, Indexer],
         tari_connector_sample: TariConnectorSample,
         server: Server,
         signaling_server: SignalingServer,
     ) -> None:
         self.miner = miner
-        self.dan_wallets = dan_wallets
-        self.indexers = indexers
         self.tari_connector_sample = tari_connector_sample
         self.server = server
         self.signaling_server = signaling_server
+        self.indexers = indexers
+        self.dan_wallets = dan_wallets
+        self.validator_nodes = validator_nodes
 
     def burn(self, public_key: str, outfile: str, amount: int):
         public_key_bytes = bytes([int(public_key[i : i + 2], 16) for i in range(0, len(public_key), 2)])
@@ -68,23 +69,23 @@ class Commands:
         return None
 
     def jrpc_vn(self, index: int) -> Optional[str]:
-        return validator_nodes.jrpc_vn(index)
+        return self.validator_nodes.jrpc_vn(index)
 
     def jrpc_dan(self, index: int) -> Optional[str]:
         if index in self.dan_wallets:
-            return f"{local_ip}:{self.dan_wallets[index].json_rpc_port}"
+            return f"{local_ip}:{dan_wallets[index].json_rpc_port}"
         return None
 
     def jrpc_indexer(self, index: int) -> Optional[str]:
         if index in self.indexers:
-            return f"{local_ip}:{self.indexers[index].json_rpc_port}"
+            return f"{local_ip}:{indexers[index].json_rpc_port}"
         return None
 
     def jrpc_signaling(self) -> str:
         return f"{local_ip}:{self.signaling_server.json_rpc_port}"
 
     def http_vn(self, index: int) -> Optional[str]:
-        return validator_nodes.http_vn(index)
+        return self.validator_nodes.http_vn(index)
 
     def http_dan(self, index: int) -> Optional[str]:
         if index in self.dan_wallets:

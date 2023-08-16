@@ -12,7 +12,6 @@ from Common.config import (
     DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE,
     DELETE_TEMPLATES,
     DELETE_STDOUT_LOGS,
-    LISTEN_ONLY_ON_LOCALHOST,
     SPAWN_INDEXERS,
     SPAWN_VNS,
     SPAWN_WALLETS,
@@ -26,8 +25,6 @@ from Common.config import (
     TEMPLATES,
     USE_BINARY_EXECUTABLE,
 )
-from Processes.dan_wallet_daemon import DanWalletDaemon
-from Processes.indexer import Indexer
 from Processes.miner import miner
 from Processes.signaling_server import SignalingServer
 from Stats.stats import stats
@@ -46,16 +43,16 @@ import time
 import traceback
 import webbrowser
 from Collections.validator_nodes import validator_nodes
+from Collections.indexers import indexers
+from Collections.dan_wallet_daemons import dan_wallets
 from typing import Any
 
-indexers: dict[int, Indexer] = {}
-dan_wallets: dict[int, DanWalletDaemon] = {}
 accounts: dict[str, Any] = {}
 
 
 def cli_loop():
-    global miner, dan_wallets, indexers, tari_connector_sample, server, accounts
-    commands = Commands(dan_wallets, indexers, tari_connector_sample, server, signaling_server)
+    global miner, tari_connector_sample, server, accounts
+    commands = Commands(tari_connector_sample, server, signaling_server)
     server = JrpcWebuiServer(commands)
     try:
         while True:
@@ -126,8 +123,6 @@ def cli_loop():
                 elif command.startswith("http"):
                     if command.startswith("http vn"):
                         if r := re.match(r"http vn (\d+)", command):
-                            print(r.groups())
-                            print(r.group(1))
                             vn_id = int(r.group(1))
                             http_address = commands.http_vn(vn_id)
                             if http_address:
@@ -181,16 +176,10 @@ def cli_loop():
                             validator_nodes.stop(vn_id)
                         elif r := re.match(r"dan (\d+)", what):
                             dan_id = int(r.group(1))
-                            if dan_id in dan_wallets:
-                                del dan_wallets[dan_id]
-                            else:
-                                print(f"DanWallet id ({dan_id}) is invalid, either it never existed or you already stopped it")
+                            dan_wallets.stop(dan_id)
                         elif r := re.match(r"indexer (\d+)", what):
                             indexer_id = int(r.group(1))
-                            if indexer_id in indexers:
-                                del indexers[indexer_id]
-                            else:
-                                print(f"Indexer id ({dan_id}) is invalid, either it never existed or you already stopped it")
+                            indexers.stop(indexer_id)
                         else:
                             print("Invalid stop command", command)
                         # which = what.split()
@@ -205,12 +194,10 @@ def cli_loop():
                     if "wallet" in locals():
                         print("Wallet is running")
                     validator_nodes.live()
-                    for daemon_id in dan_wallets:
-                        print(f"DanWallet<{daemon_id}> is running")
-                    for indexer_id in indexers:
-                        print(f"Indexer<{indexer_id}> is running")
+                    dan_wallets.live()
+                    indexers.live()
                 elif command == "tx":
-                    template.call_function(TEMPLATE_FUNCTION[0], next(iter(dan_wallets.values())).jrpc_client, FUNCTION_ARGS)
+                    template.call_function(TEMPLATE_FUNCTION[0], dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS)
                     pass
                 elif command.startswith("eval"):
                     # In case you need for whatever reason access to the running python script
@@ -229,7 +216,7 @@ def cli_loop():
 
 
 def stress_test():
-    global base_node, miner, dan_wallets, indexers, tari_connector_sample, server
+    global base_node, miner, tari_connector_sample, server
     global total_num_of_tx
     num_of_tx = 1  # this is how many times we send the funds back and forth for each of two wallets
     total_num_of_tx = 0
@@ -278,26 +265,6 @@ def check_executable(bins_folder: str, file_name: str):
     if not os.path.exists(os.path.join(bins_folder, file_name)) and not os.path.exists(os.path.join(bins_folder, f"{file_name}.exe")):
         print(f"Copy {file_name} executable to '{bins_folder}' here")
         exit()
-
-
-def wait_for_indexers_to_sync():
-    print("Waiting for Indexers to  sync to", base_node.grpc_client.get_tip())
-    # We have to check if VNs are already running their jrpc server
-    while True:
-        try:
-            while any(
-                indexer.jrpc_client.get_epoch_manager_stats()["current_block_height"] != base_node.grpc_client.get_tip() - 3 for indexer in indexers.values()
-            ):
-                print(
-                    [indexer.jrpc_client.get_epoch_manager_stats()["current_block_height"] for indexer in indexers.values()],
-                    base_node.grpc_client.get_tip() - 3,
-                    end="\033[K\r",
-                )
-                time.sleep(1)
-            break
-        except:
-            time.sleep(1)
-    print("done\033[K")
 
 
 try:
@@ -368,7 +335,7 @@ try:
         print_step("STARTING INDEXERS")
 
         def spawn_indexer(id: int):
-            indexers[id] = Indexer(id, base_node.grpc_port, local_ip, validator_nodes.get_addresses())
+            indexers.add_indexer(id)
             time.sleep(1)
             # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
             # to start comms
@@ -381,7 +348,7 @@ try:
             threads.add(spawn_indexer, (id,))
 
         threads.wait()
-        wait_for_indexers_to_sync()
+        indexers.wait_for_sync()
         # connections = indexer.jrpc_client.get_connections()
         # comms_stats = indexer.jrpc_client.get_comms_stats()
         # print(connections)
@@ -398,10 +365,10 @@ try:
     print_step("CREATING DAN WALLETS DAEMONS")
 
     def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
-        dan_wallets[dwallet_id] = DanWalletDaemon(dwallet_id, indexer_jrpc, signaling_server_jrpc, local_ip)
+        dan_wallets.add_dan_wallet_daemon(dwallet_id, indexer_jrpc, signaling_server_jrpc)
 
     for dwallet_id in range(SPAWN_WALLETS):
-        if indexers and signaling_server_jrpc_port:
+        if SPAWN_INDEXERS > 0 and signaling_server_jrpc_port:
             threads.add(
                 create_wallet,
                 (
@@ -415,7 +382,7 @@ try:
 
     miner.mine(23)
     validator_nodes.wait_for_sync()
-    wait_for_indexers_to_sync()
+    indexers.wait_for_sync()
 
     def spawn_wallet(d_id: int):
         while True:
@@ -441,7 +408,8 @@ try:
         # Wait for the VNs to pickup the blocks from base layer
         # TODO wait for VN to download and activate the template
     validator_nodes.wait_for_sync()
-    wait_for_indexers_to_sync()
+
+    indexers.wait_for_sync()
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
@@ -454,7 +422,7 @@ try:
             dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name} created")
 
-        threads.set_semaphore_limit(5)
+        threads.set_semaphore_limit(1)
         for i in range(CREATE_ACCOUNTS):
             threads.add(create_account, (i, 10000000))
         threads.wait()
@@ -533,7 +501,7 @@ try:
             template = templates[template_name[0]]
             dump_into_account = "!" in template_name[1]
             method = template_name[1].replace("!", "")
-            template.call_function(method, next(iter(dan_wallets.values())).jrpc_client, FUNCTION_ARGS, dump_into_account)
+            template.call_function(method, dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS, dump_into_account)
 
     if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
         if not STEPS_RUN_SIGNALLING_SERVER:
@@ -557,11 +525,11 @@ if "tari_connector_sample" in locals():
     del tari_connector_sample
 if "signaling_server" in locals():
     del signaling_server
-if "DanWallets" in locals():
+if "dan_wallets" in locals():
     del dan_wallets
 if "indexers" in locals():
     del indexers
-if "VNs" in locals():
+if "validator_nodes" in locals():
     del validator_nodes
 if "wallet" in locals():
     del wallet

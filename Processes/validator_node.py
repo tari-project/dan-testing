@@ -35,6 +35,9 @@ class JrpcValidatorNode:
     def get_fees(self, claim_leader_public_key, epoch):
         return self.call("get_fees", [claim_leader_public_key, epoch])
 
+    def get_network_committees(self):
+        return self.call("get_network_committees")
+
 
 class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):
