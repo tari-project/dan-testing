@@ -6,12 +6,13 @@ import os
 import time
 import re
 import requests
+from Common.local_ip import local_ip
 from Processes.subprocess_wrapper import SubprocessWrapper
 from Processes.common_exec import CommonExec
 
 
 class Indexer(CommonExec):
-    def __init__(self, indexer_id: int, base_node_grpc_port: int, local_ip, peers=[]):
+    def __init__(self, indexer_id: int, base_node_grpc_port: int, peers=[]):
         super().__init__("Indexer", indexer_id)
         self.id = indexer_id
         self.public_port = self.get_port("public_address")
