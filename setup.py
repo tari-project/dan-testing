@@ -11,7 +11,8 @@ setup(
     install_requires=[
         "grpcio-tools",
         "requests",
-        "psutil"
+        "psutil",
+        "jsonrpcserver"
         # Add more dependencies here
     ],
 )
