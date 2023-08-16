@@ -55,7 +55,7 @@ class JrpcDanWalletDaemon:
         stats.end_run(id)
         return res
 
-    def accounts_list(self, offset: int = 0, limit: int = 1):
+    def accounts_list(self, offset: int = 0, limit: int = 1) -> dict[str, Any]:
         return self.call("accounts.list", [offset, limit])
 
     def transaction_submit_instruction(self, instruction, dump_buckets: bool = True):

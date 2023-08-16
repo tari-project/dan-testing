@@ -1,5 +1,6 @@
 __pycache__
-.vscode
+.vscode/*
+!.vscode/launch.json
 base_node
 counter
 dan_wallet_daemon*/
@@ -20,6 +21,10 @@ build
 *.egg
 node_modules/*
 venv/
+Lib/
+Scripts/
+pyvenv.cfg
+.env
 
 # OSX files
 .DS_Store

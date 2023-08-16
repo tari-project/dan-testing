@@ -1,4 +1,3 @@
-from Collections.validator_nodes import validator_nodes
 from commands import Commands
 from Common.config import DATA_FOLDER, WEBUI_PORT
 from Common.local_ip import local_ip
@@ -73,8 +72,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
         @method
         def vns() -> Result:
             res = {}
-            for id in validator_nodes:
-                res[id] = validator_nodes[id].get_info_for_ui()
+            for id in self.commands.validator_nodes:
+                res[id] = self.commands.validator_nodes[id].get_info_for_ui()
             return Success(res)
 
         @method
@@ -200,8 +199,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 what, index = what.split(" ")
                 index = int(index)
                 if what == "vn":
-                    if index in validator_nodes:
-                        return Success(validator_nodes[index].get_logs())
+                    if index in self.commands.validator_nodes:
+                        return Success(self.commands.validator_nodes[index].get_logs())
                 if what == "dan":
                     if index in self.commands.dan_wallets:
                         return Success(self.commands.dan_wallets[index].get_logs())
@@ -237,8 +236,8 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 what, index = what.split(" ")
                 index = int(index)
                 if what == "vn":
-                    if index in validator_nodes:
-                        return Success(validator_nodes[index].get_stdout())
+                    if index in self.commands.validator_nodes:
+                        return Success(self.commands.validator_nodes[index].get_stdout())
                 if what == "dan":
                     if index in self.commands.dan_wallets:
                         return Success(self.commands.dan_wallets[index].get_stdout())
