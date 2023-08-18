@@ -15,7 +15,6 @@ import os
 import subprocess
 import threading
 import webbrowser
-import traceback
 
 
 class JrpcHandler(BaseHTTPRequestHandler):

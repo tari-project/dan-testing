@@ -52,15 +52,15 @@ class ValidatorNodes:
         self.validator_nodes[vn_id] = ValidatorNode(base_node.grpc_port, wallet.grpc_port, vn_id, self.get_addresses())
 
     def register(self):
+        print("Waiting for wallet balance", end=".")
         for vn_id in self.validator_nodes:
-            print("Waiting for wallet balance", end=".")
             while wallet.grpc_client.get_balance().available_balance == 0:
                 time.sleep(1)
                 print(".", end="")
-            print("done")
             self.validator_nodes[vn_id].register(local_ip)
             # Uncomment next line if you want to have only one registeration per block
             # miner.mine(1)
+        print("done")
 
             # Wait until they are all in the mempool
         i = 0
