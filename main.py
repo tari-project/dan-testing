@@ -218,7 +218,7 @@ def cli_loop():
 def stress_test():
     global base_node, miner, tari_connector_sample, server
     global total_num_of_tx
-    num_of_tx = 1  # this is how many times we send the funds back and forth for each of two wallets
+    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
     total_num_of_tx = 0
 
     def send_tx(account0: int, account1: int):
@@ -394,7 +394,6 @@ try:
         print(f"Dan Wallet {d_id} created")
 
     for dwallet_id in dan_wallets:
-        print("....")
         threads.add(spawn_wallet, (dwallet_id,))
 
     threads.wait()
