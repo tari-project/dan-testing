@@ -48,26 +48,26 @@ jobs:
 
     steps:
       - name: checkout dan-testing
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: sources/dan-testing
 
       - name: checkout tari
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.TARI_REPO }}
           ref: ${{ env.TARI_BRANCH }}
           path: sources/tari
 
       - name: checkout tari-dan
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.TARI-DAN_REPO }}
           ref: ${{ env.TARI-DAN_BRANCH }}
           path: sources/tari-dan
 
       - name: checkout tari-connector
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.TARI-CONNECTOR_REPO }}
           ref: ${{ env.TARI-CONNECTOR_BRANCH }}
