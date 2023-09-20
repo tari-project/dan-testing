@@ -49,9 +49,9 @@ class Wallet(CommonExec):
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = [os.path.join(TARI_BINS_FOLDER, "tari_console_wallet")]
+            run = [os.path.join(TARI_BINS_FOLDER, "minotari_console_wallet")]
         else:
-            run = ["cargo", "run", "--bin", "tari_console_wallet", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
+            run = ["cargo", "run", "--bin", "minotari_console_wallet", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",

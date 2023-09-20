@@ -117,13 +117,19 @@ class ValidatorNode(CommonExec):
                 os.path.join("..", "tari-dan", "Cargo.toml"),
                 "--",
             ]
-        self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/{local_ip}/tcp/{self.json_rpc_port}", "vn", "register"]
+        self.exec_cli = [*run, "--vn-daemon-jrpc-endpoint", f"/ip4/{local_ip}/tcp/{self.json_rpc_port}", "vn", "register", "d6d21f5c18406b390ce405fd21773d90bddb221b38c950dccf8f26840937004d"]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(
                 self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}_cli.log"), "a+"), stderr=subprocess.STDOUT
             )
+            if self.cli_process != 0:
+               raise Exception("Validator node cli registration process failed")
+            print(f"Validator node register: {self.cli_process}")
         else:
             self.cli_process = SubprocessWrapper.call(self.exec_cli)
+            print(f"Validator node register: {self.cli_process}")
+            if self.cli_process != 0:
+               raise Exception("Validator node cli registration process failed")
 
     def get_info_for_ui(self):
         return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}

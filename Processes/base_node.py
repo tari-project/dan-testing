@@ -61,9 +61,9 @@ class BaseNode(CommonExec):
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
         if USE_BINARY_EXECUTABLE:
-            run = [os.path.join(TARI_BINS_FOLDER, "tari_base_node")]
+            run = [os.path.join(TARI_BINS_FOLDER, "minotari_node")]
         else:
-            run = ["cargo", "run", "--bin", "tari_base_node", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
+            run = ["cargo", "run", "--bin", "minotari_node", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",
