@@ -48,9 +48,9 @@ class JrpcDanWalletDaemon:
         stats.end_run(id)
         return res
 
-    def create_free_test_coins(self, account: Any, amount: int, fee: Optional[int] = None):
+    def create_free_test_coins(self, account: Any, amount: int, fee: Optional[int] = None, key_id: Optional[int] = None):
         id = stats.start_run("accounts.create_free_test_coins")
-        res = self.call("accounts.create_free_test_coins", [account, amount, fee])
+        res = self.call("accounts.create_free_test_coins", [account, amount, fee, key_id])
         self.last_account_name = account
         stats.end_run(id)
         return res
@@ -142,11 +142,11 @@ class DanWalletDaemon(CommonExec):
             "--network",
             "localnet",
             "--json-rpc-address",
-            f"0.0.0.0:{self.json_rpc_port}",
+            f"127.0.0.1:{self.json_rpc_port}",
             "--indexer_url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
             "-p",
-            f"dan_wallet_daemon.http_ui_address=0.0.0.0:{self.http_port}",
+            f"dan_wallet_daemon.http_ui_address=127.0.0.1:{self.http_port}",
             "--ui-connect-address",
             self.json_rpc_address,
         ]

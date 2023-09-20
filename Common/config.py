@@ -82,7 +82,7 @@ DEFAULT_TEMPLATE_FUNCTION = get_env_or_default(
     'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"',
 )
 BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
-NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "true", is_boolstring))
+NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "false", is_boolstring))
 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
 STEPS_CREATE_ACCOUNT = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring))

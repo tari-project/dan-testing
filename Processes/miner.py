@@ -13,9 +13,9 @@ class Miner:
     def start(self, base_node_grpc_port, wallet_grpc_port, local_ip):
         self.name = "miner"
         if USE_BINARY_EXECUTABLE:
-            run = [os.path.join(TARI_BINS_FOLDER, "tari_miner")]
+            run = [os.path.join(TARI_BINS_FOLDER, "minotari_miner")]
         else:
-            run = ["cargo", "run", "--bin", "tari_miner", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
+            run = ["cargo", "run", "--bin", "minotari_miner", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec_template = [
             *run,
             "-b",
