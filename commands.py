@@ -98,4 +98,7 @@ class Commands:
         return None
 
     def http_connector(self) -> str:
-        return f"http://{local_ip}:{self.tari_connector_sample.http_port}"
+        try:
+            return f"http://{local_ip}:{self.tari_connector_sample.http_port}"
+        except:
+            return ""
