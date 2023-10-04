@@ -56,8 +56,7 @@ REDIRECT_VN_FROM_INDEX_STDOUT = 0
 # how many dan wallets should print to console
 REDIRECT_DAN_WALLET_STDOUT = 0
 # The register vn cli is redirected as VN, this is for the publish template etc.
-REDIRECT_VN_CLI_STDOUT = True
-REDIRECT_INDEXER_STDOUT = True
+REDIRECT_INDEXER_STDOUT = 0
 # This is for the cargo generate and compilation for the template
 REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT = True
 REDIRECT_TEMPLATE_STDOUT = True
