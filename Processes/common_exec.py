@@ -40,7 +40,7 @@ class CommonExec:
 
     def run(self, redirect: Union[bool, int], cwd: Optional[str] = None):
         env: dict[str, str] = os.environ.copy()
-        if (self.id is not None and self.id >= redirect) or (not self.id and redirect):
+        if (self.id is not None and self.id >= redirect) or (self.id is None and redirect):
             self.process = SubprocessWrapper.Popen(
                 self.exec,
                 stdin=subprocess.PIPE,

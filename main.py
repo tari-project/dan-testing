@@ -223,7 +223,7 @@ def stress_test():
 
     def send_tx(account0: int, account1: int):
         global total_num_of_tx
-        res_addr = [1] * 32
+        res_addr = "resource_0101010101010101010101010101010101010101010101010101010101010101"
         acc0, dan0 = accounts[account0]
         acc1, dan1 = accounts[account1]
         public_key0 = acc0["public_key"]
