@@ -204,6 +204,8 @@ def cli_loop():
                     eval(for_eval[len("eval ") :])
                 elif command == "stats":
                     print(stats)
+                elif command == "exit":
+                    break
                 else:
                     print("Wrong command")
             except Exception as ex:
