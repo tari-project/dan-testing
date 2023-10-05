@@ -12,6 +12,18 @@ docker build -f dan-testing/docker_rig/dan-testing.Dockerfile \
   -t local/dan-testing .
 ```
 
+# Targeted testing and cross platform builds
+```bash
+docker build -f dan-testing/docker_rig/dan-testing.Dockerfile \
+  -t local/dan-testing-tari-dan --target=builder-tari-dan .
+```
+or
+```bash
+docker buildx build -f dan-testing/docker_rig/dan-testing.Dockerfile \
+  -t local/dan-testing-tari-dan-arm64 --target=builder-tari-dan \
+  --platform linux/arm64 .
+```
+
 # Docker Testing Notes
 Launching the docker image with local ports redirected to docker container ports 18000 to 19000 
 ```bash

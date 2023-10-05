@@ -1,7 +1,10 @@
 # syntax = docker/dockerfile:1.3
 
 # https://hub.docker.com/_/rust
-ARG RUST_VERSION=1.70
+ARG RUST_VERSION=1.72
+
+# Node Version
+ARG NODE_MAJOR=20
 
 # rust source compile with cross platform build support
 FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-bullseye as builder-tari
@@ -18,16 +21,22 @@ ARG TARGETVARIANT
 ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
+
 ARG DAN_TESTING_WEBUI_PORT
 
-# Prep nodejs lts - 18.x
+# Node Version
+ARG NODE_MAJOR
+ENV NODE_MAJOR=$NODE_MAJOR
+
+# Prep nodejs lts - 20.x
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
-      bash \
       ca-certificates \
       curl \
       gpg && \
-      curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+      mkdir -p /etc/apt/keyrings && \
+      curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+      echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 RUN apt-get update && apt-get install -y \
       libreadline-dev \
@@ -74,20 +83,20 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
     rustup show && \
     cargo build ${RUST_TARGET} \
       --release --features ${FEATURES} --locked \
-      --bin tari_base_node \
-      --bin tari_console_wallet \
-      --bin tari_miner && \
+      --bin minotari_node \
+      --bin minotari_console_wallet \
+      --bin minotari_miner && \
     # Copy executable out of the cache so it is available in the runtime image.
-    cp -v /tari/target/${BUILD_TARGET}release/tari_base_node /usr/local/bin/ && \
-    cp -v /tari/target/${BUILD_TARGET}release/tari_console_wallet /usr/local/bin/ && \
-    cp -v /tari/target/${BUILD_TARGET}release/tari_miner /usr/local/bin/ && \
+    cp -v /tari/target/${BUILD_TARGET}release/minotari_node /usr/local/bin/ && \
+    cp -v /tari/target/${BUILD_TARGET}release/minotari_console_wallet /usr/local/bin/ && \
+    cp -v /tari/target/${BUILD_TARGET}release/minotari_miner /usr/local/bin/ && \
     echo "Tari Build Done"
 
-RUN mkdir -p "/usr/local/lib/tari/protos/" && \
+RUN mkdir -p "/usr/local/lib/minotari/protos/" && \
     python3 -m grpc_tools.protoc \
-      --proto_path /tari/applications/tari_app_grpc/proto/ \
-      --python_out=/usr/local/lib/tari/protos \
-      --grpc_python_out=/usr/local/lib/tari/protos /tari/applications/tari_app_grpc/proto/*.proto
+      --proto_path /tari/applications/minotari_app_grpc/proto/ \
+      --python_out=/usr/local/lib/minotari/protos \
+      --grpc_python_out=/usr/local/lib/minotari/protos /tari/applications/minotari_app_grpc/proto/*.proto
 
 # rust source compile with cross platform build support
 FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-bullseye as builder-tari-dan
@@ -105,14 +114,19 @@ ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
 
-# Prep nodejs lts - 18.x
+# Node Version
+ARG NODE_MAJOR
+ENV NODE_MAJOR=$NODE_MAJOR
+
+# Prep nodejs lts - 20.x
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
-      bash \
       ca-certificates \
       curl \
       gpg && \
-      curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+      mkdir -p /etc/apt/keyrings && \
+      curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+      echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 RUN apt-get update && apt-get install -y \
       libreadline-dev \
@@ -196,14 +210,19 @@ ARG VERSION
 # Disable Prompt During Packages Installation
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Prep nodejs 18.x
+# Node Version
+ARG NODE_MAJOR
+ENV NODE_MAJOR=$NODE_MAJOR
+
+# Prep nodejs 20.x
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
-      bash \
       ca-certificates \
       curl \
       gpg && \
-      curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+      mkdir -p /etc/apt/keyrings && \
+      curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+      echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 RUN apt-get update && apt-get --no-install-recommends install -y \
       libreadline8 \
@@ -273,8 +292,8 @@ RUN npm link
 WORKDIR /home/tari/sources/dan-testing
 RUN npm link tari-connector
 
-COPY --chown=tari:tari --from=builder-tari /usr/local/lib/tari/protos /home/tari/sources/dan-testing/protos
-COPY --from=builder-tari /usr/local/bin/tari_* /usr/local/bin/
+COPY --chown=tari:tari --from=builder-tari /usr/local/lib/minotari/protos /home/tari/sources/dan-testing/protos
+COPY --from=builder-tari /usr/local/bin/minotari_* /usr/local/bin/
 COPY --from=builder-tari-dan /usr/local/bin/tari_* /usr/local/bin/
 
 ENV DAN_TESTING_WEBUI_PORT=${DAN_TESTING_WEBUI_PORT:-18000}
