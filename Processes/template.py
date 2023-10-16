@@ -113,7 +113,7 @@ class Template:
                 "templates",
                 "publish",
                 "--binary-url",
-                f"http://localhost:{server_port}/templates/{self.name}",
+                f"http://localhost:{server_port}/templates/{self.template}",
                 # "--template-code-path",
                 # os.path.join(DATA_FOLDER, "templates", self.name, "package"),
                 "--template-name",
