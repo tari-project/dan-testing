@@ -29,11 +29,15 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 form_data = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={"REQUEST_METHOD": "POST"})
                 if "file" in form_data:
                     uploaded_file = form_data["file"]
+                    try:
+                        os.makedirs(os.path.join(DATA_FOLDER, "templates"))
+                    except:
+                        pass
                     f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename), "wb")
                     f.write(uploaded_file.file.read())
                     f.close()
                     template = Template(uploaded_file.filename, from_source=False)
-                    template.publish_template(validator_nodes.any_node().json_rpc_port, self.commands.server.port, local_ip)
+                    template.publish_template(self.commands.validator_nodes.any_node().json_rpc_port, self.commands.server.port, local_ip)
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
                     self.end_headers()

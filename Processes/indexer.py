@@ -18,7 +18,8 @@ class Indexer(CommonExec):
         self.public_port = self.get_port("public_address")
         self.public_adress = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
-        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_rpc_address = f"0.0.0.0:{self.json_rpc_port}"
+        self.jrpc_for_ui_address = f"{local_ip}:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
         self.http_ui_address = f"{local_ip}:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
@@ -57,9 +58,11 @@ class Indexer(CommonExec):
             f"indexer.json_rpc_address={self.json_rpc_address}",
             "-p",
             f"indexer.http_ui_address={self.http_ui_address}",
+            "-p",
+            f"indexer.jrpc_for_ui_address={self.jrpc_for_ui_address}"
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
-        self.jrpc_client = JrpcIndexer(f"http://{self.json_rpc_address}")
+        self.jrpc_client = JrpcIndexer(f"http://{self.jrpc_for_ui_address}")
         while not os.path.exists(os.path.join(DATA_FOLDER, f"indexer_{self.id}", "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
@@ -81,7 +84,7 @@ class Indexer(CommonExec):
         return f"{public_key}::{public_address}"
 
     def get_info_for_ui(self):
-        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}
+        return {"http": self.http_ui_address, "jrpc": self.jrpc_for_ui_address}
 
 
 class JrpcIndexer:
