@@ -59,7 +59,7 @@ class Indexer(CommonExec):
             "-p",
             f"indexer.http_ui_address={self.http_ui_address}",
             "-p",
-            f"indexer.ui_connect_address={self.jrpc_for_ui_address}"
+            f"indexer.ui_connect_address=http://{self.jrpc_for_ui_address}",
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
         self.jrpc_client = JrpcIndexer(f"http://{self.jrpc_for_ui_address}")
