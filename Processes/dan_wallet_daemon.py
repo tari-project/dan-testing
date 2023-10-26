@@ -64,7 +64,7 @@ class JrpcDanWalletDaemon:
             res = self.call(
                 "transactions.submit_instruction",
                 {
-                    "instruction": instruction,
+                    "instructions": [instruction],
                     "fee_account": self.last_account_name,
                     "dump_outputs_into": self.last_account_name,
                     "fee": 1000,
@@ -74,7 +74,7 @@ class JrpcDanWalletDaemon:
         else:
             res = self.call(
                 "transactions.submit_instruction",
-                {"instruction": instruction, "fee_account": self.last_account_name, "fee": 1000},
+                {"instructions": [instruction], "fee_account": self.last_account_name, "fee": 1000},
             )
             tx_id = res["transaction_id"]
         while True:
