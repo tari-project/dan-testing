@@ -31,16 +31,17 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 if "file" in form_data:
                     now = datetime.now()
                     uploaded_file = form_data["file"]
-                    d =now.strftime("%Y%m%d")
-                    t = now.strftime("%H%M%S")
+                    try:
+                        os.makedirs(os.path.join(DATA_FOLDER, "templates"))
+                    except:
+                        pass
                     path = f"{uploaded_file.filename}"
-                    os.makedirs(path, exist_ok=True)
                     if os.path.exists(os.path.join(DATA_FOLDER, "templates", path)):
                        os.remove(os.path.join(DATA_FOLDER, "templates", path))
-                    f = open(os.path.join(DATA_FOLDER, "templates", path), "wb")
+                    f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename), "wb")
                     f.write(uploaded_file.file.read())
                     f.close()
-                    template = Template(path, name=uploaded_file.filename, from_source=False)
+                    template = Template(path, uploaded_file.filename, from_source=False)
                     template.publish_template(self.commands.validator_nodes.any_node().json_rpc_port, self.commands.server.port, local_ip)
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
