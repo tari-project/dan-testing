@@ -148,7 +148,7 @@ class DanWalletDaemon(CommonExec):
             "-p",
             f"dan_wallet_daemon.http_ui_address=127.0.0.1:{self.http_port}",
             "--ui-connect-address",
-            self.json_rpc_address,
+            f"http://{self.json_rpc_address}",
         ]
         if signaling_server_port:
             self.exec = [*self.exec, "--signaling-server-address", f"{local_ip}:{signaling_server_port}"]
