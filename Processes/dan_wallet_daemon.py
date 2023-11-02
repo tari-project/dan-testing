@@ -128,9 +128,11 @@ class DanWalletDaemon(CommonExec):
     def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int, local_ip: str):
         super().__init__("Dan_wallet_daemon", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
-        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_connect_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_listen_address = f"0.0.0.0:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
-        self.http_ui_address = f"{local_ip}:{self.http_port}"
+        self.http_connect_address = f"{local_ip}:{self.http_port}"
+        self.http_listen_address = f"0.0.0.0:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_daemon")]
         else:
@@ -142,20 +144,20 @@ class DanWalletDaemon(CommonExec):
             "--network",
             "localnet",
             "--json-rpc-address",
-            f"127.0.0.1:{self.json_rpc_port}",
+            self.json_listen_address,
             "--indexer_url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
             "-p",
-            f"dan_wallet_daemon.http_ui_address=127.0.0.1:{self.http_port}",
+            f"dan_wallet_daemon.http_ui_address={self.http_listen_address}",
             "--ui-connect-address",
-            f"http://{self.json_rpc_address}",
+            f"http://{self.json_connect_address}",
         ]
         if signaling_server_port:
             self.exec = [*self.exec, "--signaling-server-address", f"{local_ip}:{signaling_server_port}"]
         self.run(REDIRECT_DAN_WALLET_STDOUT)
 
         # (out, err) = self.process.communicate()
-        self.jrpc_client = JrpcDanWalletDaemon(f"http://{self.json_rpc_address}")
+        self.jrpc_client = JrpcDanWalletDaemon(f"http://{self.json_connect_address}")
         while not os.path.exists(os.path.join(DATA_FOLDER, self.name, "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
@@ -164,4 +166,4 @@ class DanWalletDaemon(CommonExec):
         print(f"Dan wallet daemon {dan_wallet_id} started")
 
     def get_info_for_ui(self):
-        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}
+        return {"http": self.http_connect_address, "jrpc": self.json_connect_address}

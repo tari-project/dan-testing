@@ -45,9 +45,11 @@ class ValidatorNode(CommonExec):
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
-        self.json_rpc_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_connect_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_listen_address = f"0.0.0.0:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
-        self.http_ui_address = f"{local_ip}:{self.http_port}"
+        self.http_connect_address = f"{local_ip}:{self.http_port}"
+        self.http_listen_address = f"0.0.0.0:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node")]
         else:
@@ -75,13 +77,13 @@ class ValidatorNode(CommonExec):
             "-p",
             f"validator_node.public_address={self.public_address}",
             "-p",
-            f"validator_node.json_rpc_address=0.0.0.0:{self.json_rpc_port}",
+            f"validator_node.json_rpc_address={self.json_listen_address}",
             "-p",
-            f"validator_node.http_ui_address=0.0.0.0:{self.http_port}",
+            f"validator_node.http_ui_address={self.http_listen_address}",
             "-p",
             f"validator_node.no_fees={NO_FEES}",
             "--ui-connect-address",
-            f"http://{self.json_rpc_address}",
+            f"http://{self.json_connect_address}",
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
         print("Waiting for VN to start.", end="")
@@ -92,7 +94,7 @@ class ValidatorNode(CommonExec):
             else:
                 raise Exception(f"Validator node did not start successfully: Exit code:{self.process.poll()}")
         print("done")
-        self.jrpc_client = JrpcValidatorNode(f"http://{self.json_rpc_address}")
+        self.jrpc_client = JrpcValidatorNode(f"http://{self.json_connect_address}")
 
     def get_address(self) -> str:
         validator_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "validator_node_id.json")
@@ -139,4 +141,4 @@ class ValidatorNode(CommonExec):
                 raise Exception("Validator node cli registration process failed")
 
     def get_info_for_ui(self):
-        return {"http": self.http_ui_address, "jrpc": self.json_rpc_address}
+        return {"http": self.http_connect_address, "jrpc": self.json_connect_address}

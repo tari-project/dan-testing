@@ -18,10 +18,11 @@ class Indexer(CommonExec):
         self.public_port = self.get_port("public_address")
         self.public_adress = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
-        self.json_rpc_address = f"0.0.0.0:{self.json_rpc_port}"
-        self.jrpc_for_ui_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_connect_address = f"{local_ip}:{self.json_rpc_port}"
+        self.json_listen_address = f"0.0.0.0:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
-        self.http_ui_address = f"{local_ip}:{self.http_port}"
+        self.http_connect_address = f"{local_ip}:{self.http_port}"
+        self.http_listen_address = f"0.0.0.0:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_indexer")]
         else:
@@ -55,14 +56,14 @@ class Indexer(CommonExec):
             "-p",
             f"indexer.p2p.public_addresses={self.public_adress}",
             "-p",
-            f"indexer.json_rpc_address={self.json_rpc_address}",
+            f"indexer.json_rpc_address={self.json_listen_address}",
             "-p",
-            f"indexer.http_ui_address={self.http_ui_address}",
+            f"indexer.http_ui_address={self.http_listen_address}",
             "-p",
-            f"indexer.ui_connect_address=http://{self.jrpc_for_ui_address}",
+            f"indexer.ui_connect_address=http://{self.json_connect_address}",
         ]
         self.run(REDIRECT_INDEXER_STDOUT)
-        self.jrpc_client = JrpcIndexer(f"http://{self.jrpc_for_ui_address}")
+        self.jrpc_client = JrpcIndexer(f"http://{self.json_connect_address}")
         while not os.path.exists(os.path.join(DATA_FOLDER, f"indexer_{self.id}", "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
@@ -84,7 +85,7 @@ class Indexer(CommonExec):
         return f"{public_key}::{public_address}"
 
     def get_info_for_ui(self):
-        return {"http": self.http_ui_address, "jrpc": self.jrpc_for_ui_address}
+        return {"http": self.http_connect_address, "jrpc": self.json_connect_address}
 
 
 class JrpcIndexer:
