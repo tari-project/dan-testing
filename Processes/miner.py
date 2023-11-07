@@ -11,15 +11,15 @@ class Miner:
         pass
 
     def start(self, base_node_grpc_port, wallet_grpc_port, local_ip):
-        self.name = "miner"
+        self.name = "sha"
         if USE_BINARY_EXECUTABLE:
-            run = [os.path.join(TARI_BINS_FOLDER, "minotari_miner")]
+            run = [os.path.join(TARI_BINS_FOLDER, "minotari_sha")]
         else:
             run = ["cargo", "run", "--bin", "minotari_miner", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec_template = [
             *run,
             "-b",
-            os.path.join(DATA_FOLDER, "miner"),
+            os.path.join(DATA_FOLDER, "sha"),
             "--network",
             NETWORK,
             "--max-blocks",
@@ -36,7 +36,7 @@ class Miner:
         self.exec = list(self.exec_template)
         self.exec[self.exec.index("#blocks")] = str(blocks)
         if REDIRECT_MINER_STDOUT:
-            self.process = SubprocessWrapper.call(self.exec, stdout=open(os.path.join(DATA_FOLDER, "stdout", "miner.log"), "a+"), stderr=subprocess.STDOUT)
+            self.process = SubprocessWrapper.call(self.exec, stdout=open(os.path.join(DATA_FOLDER, "stdout", "shamin.log"), "a+"), stderr=subprocess.STDOUT)
         else:
             self.process = SubprocessWrapper.call(self.exec)
 

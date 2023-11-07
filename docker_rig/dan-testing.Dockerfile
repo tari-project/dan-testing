@@ -89,7 +89,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
     # Copy executable out of the cache so it is available in the runtime image.
     cp -v /tari/target/${BUILD_TARGET}release/minotari_node /usr/local/bin/ && \
     cp -v /tari/target/${BUILD_TARGET}release/minotari_console_wallet /usr/local/bin/ && \
-    cp -v /tari/target/${BUILD_TARGET}release/minotari_miner /usr/local/bin/ && \
+    cp -v /tari/target/${BUILD_TARGET}release/minotari_miner /usr/local/bin/minotari_sha && \
     echo "Tari Build Done"
 
 RUN mkdir -p "/usr/local/lib/minotari/protos/" && \
