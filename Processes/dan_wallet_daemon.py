@@ -145,7 +145,7 @@ class DanWalletDaemon(CommonExec):
             "localnet",
             "--json-rpc-address",
             self.json_listen_address,
-            "--indexer_url",
+            "--indexer-url",
             f"http://{local_ip}:{indexer_jrpc_port}/json_rpc",
             "-p",
             f"dan_wallet_daemon.http_ui_address={self.http_listen_address}",
