@@ -87,6 +87,8 @@ class BaseNode(CommonExec):
             # f'{NETWORK}.p2p.seeds.peer_seeds="369ae9a89c3fc2804d6ec07e20bf10e5d0e72f565a71821fc7c611ae5bee0116::/ip4/34.252.174.111/tcp/18000"',
             "-p",
             "base_node.metadata_auto_ping_interval=3",
+            "-p",
+            "base_node.report_grpc_error=true",
         ]
         self.run(REDIRECT_BASE_NODE_STDOUT)
         # Sometimes it takes a while to establish the grpc connection
@@ -95,8 +97,8 @@ class BaseNode(CommonExec):
                 self.grpc_client = GrpcBaseNode(f"{local_ip}:{self.grpc_port}")
                 self.grpc_client.get_version()
                 break
-            except:
-                pass
+            except Exception as e:
+                print(e)
             time.sleep(1)
 
     def get_address(self) -> str:

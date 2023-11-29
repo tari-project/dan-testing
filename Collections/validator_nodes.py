@@ -62,7 +62,7 @@ class ValidatorNodes:
             # miner.mine(1)
         print("done")
 
-            # Wait until they are all in the mempool
+        # Wait until they are all in the mempool
         i = 0
         print("Waiting for X tx's in mempool.", end="")
         while i < 10:
