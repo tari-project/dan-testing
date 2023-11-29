@@ -84,8 +84,8 @@ class Wallet(CommonExec):
                 self.grpc_client = GrpcWallet(f"{local_ip}:{self.grpc_port}")
                 self.grpc_client.get_version()
                 break
-            except:
-                pass
+            except Exception as e:
+                print(e)
             time.sleep(1)
 
     def stop(self):
