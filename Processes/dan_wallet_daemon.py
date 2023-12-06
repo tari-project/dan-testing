@@ -109,7 +109,7 @@ class JrpcDanWalletDaemon:
         return self.call("accounts.get_balances", [account["account"]["name"], True])
 
     def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int]):
-        id = stats.start_run("accounts.create_free_test_coins")
+        id = stats.start_run("accounts.transfer")
         res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
         stats.end_run(id)
         return res
