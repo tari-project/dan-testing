@@ -217,10 +217,10 @@ def cli_loop():
     del server
 
 
-def stress_test():
+# this is how many times we send the funds back and forth for each of two wallets
+def stress_test(num_of_tx: int = 1):
     global base_node, miner, tari_connector_sample, server
     global total_num_of_tx
-    num_of_tx = 10  # this is how many times we send the funds back and forth for each of two wallets
     total_num_of_tx = 0
 
     def send_tx(account0: int, account1: int):
@@ -232,9 +232,9 @@ def stress_test():
         public_key1 = acc1["public_key"]
         for i in range(num_of_tx):
             print(f"tx {account0} -> {account1} ({i})")
-            # dan_wallets[src_id].jrpc_client.confidential_transfer(src_account, 1, res_addr, dst_public_key, 1)
-            # dan_wallets[dst_id].jrpc_client.confidential_transfer(dst_account, 1, res_addr, src_public_key, 1)
-            dan0.jrpc_client.transfer(acc0, 1, res_addr, public_key1, 2000)
+            # dan0.jrpc_client.confidential_transfer(acc0, 1, res_addr, public_key1, 2000)
+            # dan1.jrpc_client.confidential_transfer(acc1, 1, res_addr, public_key0, 2000)
+            dan0.jrpc_client.transfer(acc0, 2000, res_addr, public_key1, 2000)
             total_num_of_tx += 1
             # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 2000)
 
@@ -437,11 +437,12 @@ try:
                     time.sleep(1)
                 else:
                     break
-            for acc in accs:
+            for acc in sorted(accs, key=lambda acc: acc["account"]["name"]):
                 accounts[acc["account"]["name"]] = (acc, dan_wallets[did])
         print()
         # burns = {}
         # accounts = {}
+        # BURN_AMOUNT = 10000
         # print_step(f"BURNING {BURN_AMOUNT}")
         # for id in dan_wallets:
         #     dan_wallet_jrpc = dan_wallets[id].jrpc_client

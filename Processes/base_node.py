@@ -4,7 +4,7 @@
 from grpc import insecure_channel
 
 try:
-    from protos import types_pb2, base_node_pb2_grpc
+    from protos import types_pb2, base_node_pb2_grpc, base_node_pb2
 except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
@@ -49,6 +49,10 @@ class GrpcBaseNode:
 
     def get_tip(self) -> int:
         return self.get_tip_info().metadata.height_of_longest_chain
+
+    def get_active_validator_nodes(self, height: int):
+        request = base_node_pb2.GetActiveValidatorNodesRequest(height=height)
+        return self.stub.GetActiveValidatorNodes(request)
 
 
 class BaseNode(CommonExec):
