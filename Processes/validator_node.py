@@ -74,8 +74,8 @@ class ValidatorNode(CommonExec):
             f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peers)}",
             # "-p",
             # f"validator_node.p2p.public_address={self.public_adress}",
-            "-p",
-            f"validator_node.public_address={self.public_address}",
+            # "-p",
+            # f"validator_node.public_address={self.public_address}",
             "-p",
             f"validator_node.json_rpc_address={self.json_listen_address}",
             "-p",
@@ -97,14 +97,15 @@ class ValidatorNode(CommonExec):
         self.jrpc_client = JrpcValidatorNode(f"http://{self.json_connect_address}")
 
     def get_address(self) -> str:
-        validator_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "validator_node_id.json")
-        while not os.path.exists(validator_node_id_file_name):
-            time.sleep(1)
-        f = open(validator_node_id_file_name, "rt")
-        content = "".join(f.readlines())
-        node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
-        public_address = public_address.replace("\\/", "/")
-        return f"{public_key}::{public_address}"
+        return ""
+        # validator_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "validator_node_id.json")
+        # while not os.path.exists(validator_node_id_file_name):
+        #     time.sleep(1)
+        # f = open(validator_node_id_file_name, "rt")
+        # content = "".join(f.readlines())
+        # node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
+        # public_address = public_address.replace("\\/", "/")
+        # return f"{public_key}::{public_address}"
 
     def register(self, local_ip: str):
         if USE_BINARY_EXECUTABLE:
@@ -123,6 +124,8 @@ class ValidatorNode(CommonExec):
             *run,
             "--vn-daemon-jrpc-endpoint",
             f"/ip4/{local_ip}/tcp/{self.json_rpc_port}",
+            # "--validator-maturity",
+            # "1000",
             "vn",
             "register",
             "d6d21f5c18406b390ce405fd21773d90bddb221b38c950dccf8f26840937004d",
@@ -133,12 +136,12 @@ class ValidatorNode(CommonExec):
             )
             if self.cli_process != 0:
                 raise Exception("Validator node cli registration process failed")
-            print(f"Validator node register: {self.cli_process}")
+            print(f"Validator node register: ok")
         else:
             self.cli_process = SubprocessWrapper.call(self.exec_cli)
-            print(f"Validator node register: {self.cli_process}")
             if self.cli_process != 0:
                 raise Exception("Validator node cli registration process failed")
+            print(f"Validator node register: ok")
 
     def get_info_for_ui(self):
         return {"http": self.http_connect_address, "jrpc": self.json_connect_address}

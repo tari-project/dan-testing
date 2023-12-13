@@ -218,7 +218,8 @@ def cli_loop():
 
 
 # this is how many times we send the funds back and forth for each of two wallets
-def stress_test(num_of_tx: int = 1):
+def stress_test(num_of_tx: int = 1, dry_run: bool = True):
+    # The dry run is ignored for now, once there will be a change in the PR I will update this.
     global base_node, miner, tari_connector_sample, server
     global total_num_of_tx
     total_num_of_tx = 0
@@ -234,7 +235,7 @@ def stress_test(num_of_tx: int = 1):
             print(f"tx {account0} -> {account1} ({i})")
             # dan0.jrpc_client.confidential_transfer(acc0, 1, res_addr, public_key1, 2000)
             # dan1.jrpc_client.confidential_transfer(acc1, 1, res_addr, public_key0, 2000)
-            dan0.jrpc_client.transfer(acc0, 2000, res_addr, public_key1, 2000)
+            dan0.jrpc_client.transfer(acc0, 2000, res_addr, public_key1, 2000, dry_run)
             total_num_of_tx += 1
             # dan_wallets[dst_id].jrpc_client.transfer(dst_account, 1, res_addr, src_public_key, 2000)
 
@@ -419,9 +420,9 @@ try:
         def create_account(i: int, amount: int):
             name = {"Name": f"TestAccount_{i}"}
             dan_wallet_jrpc = dan_wallets[i % SPAWN_WALLETS].jrpc_client
-            print(f"Account {name} creation started")
+            print(f"Account {name["Name"]} creation started")
             dan_wallet_jrpc.create_free_test_coins(name, amount)
-            print(f"Account {name} created")
+            print(f"Account {name["Name"]} created")
 
         threads.set_semaphore_limit(1)
         for i in range(CREATE_ACCOUNTS):
