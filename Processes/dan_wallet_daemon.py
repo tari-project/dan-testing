@@ -110,13 +110,13 @@ class JrpcDanWalletDaemon:
 
     def transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int], dry_run: bool = False):
         id = stats.start_run("accounts.transfer")
-        res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        res = self.call("accounts.transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee, dry_run])
         stats.end_run(id)
         return res
 
-    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int]):
+    def confidential_transfer(self, account: Any, amount: int, resource_address: Any, destination_publickey: Any, fee: Optional[int], dry_run: bool = False):
         id = stats.start_run("accounts.create_free_test_coins")
-        res = self.call("accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee])
+        res = self.call("accounts.confidential_transfer", [account["account"]["name"], amount, resource_address, destination_publickey, fee, dry_run])
         stats.end_run(id)
         return res
 

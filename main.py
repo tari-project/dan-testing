@@ -185,9 +185,14 @@ def cli_loop():
                         # which = what.split()
                 elif command.startswith("start"):
                     what = command.split(maxsplit=1)[1]
-                    if r := re.match(r"vn (\d+)", what):
+                    if what == "vn":
+                        vn_id = max(validator_nodes.validator_nodes.keys())+1
+                        validator_nodes.add_validator_node(vn_id)
+                        print("Adding VN", vn_id)
+                    elif r := re.match(r"vn (\d+)", what):
                         vn_id = int(r.group(1))
                         validator_nodes.add_validator_node(vn_id)
+                    validator_nodes.validator_nodes[vn_id].register(local_ip)
                 elif command == "live":
                     if "base_node" in locals():
                         print("Base node is running")
@@ -218,7 +223,7 @@ def cli_loop():
 
 
 # this is how many times we send the funds back and forth for each of two wallets
-def stress_test(num_of_tx: int = 1, dry_run: bool = True):
+def stress_test(num_of_tx: int = 1, dry_run: bool = False):
     # The dry run is ignored for now, once there will be a change in the PR I will update this.
     global base_node, miner, tari_connector_sample, server
     global total_num_of_tx

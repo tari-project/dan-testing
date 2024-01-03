@@ -50,5 +50,8 @@ class DanWalletDaemons:
     def __getitem__(self, index: int):
         return self.dan_wallets[index]
 
+    def __len__(self):
+        return len(self.dan_wallets)
+
 
 dan_wallets = DanWalletDaemons()
