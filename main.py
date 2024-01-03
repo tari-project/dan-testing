@@ -189,10 +189,18 @@ def cli_loop():
                         vn_id = max(validator_nodes.validator_nodes.keys())+1
                         validator_nodes.add_validator_node(vn_id)
                         print("Adding VN", vn_id)
+                        validator_nodes.validator_nodes[vn_id].register(local_ip)
                     elif r := re.match(r"vn (\d+)", what):
                         vn_id = int(r.group(1))
                         validator_nodes.add_validator_node(vn_id)
-                    validator_nodes.validator_nodes[vn_id].register(local_ip)
+                        validator_nodes.validator_nodes[vn_id].register(local_ip)
+                    elif what == "indexer":
+                        indexer_id = max(indexers.indexers.keys())+1
+                        indexers.add_indexer(indexer_id)
+                        print("Adding indexer", indexer_id)
+                    elif r := re.match(r"indexer (\d+)", what):
+                        indexer_id = int(r.group(1))
+                        indexers.add_indexer(indexer_id)
                 elif command == "live":
                     if "base_node" in locals():
                         print("Base node is running")
