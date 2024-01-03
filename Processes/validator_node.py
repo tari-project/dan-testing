@@ -26,6 +26,9 @@ class JrpcValidatorNode:
     def call(self, method, params=[]):
         return self.internal_call(method, params)
 
+    def get_identity(self):
+        return self.call("get_identity")
+
     def get_epoch_manager_stats(self):
         return self.call("get_epoch_manager_stats")
 
@@ -97,15 +100,10 @@ class ValidatorNode(CommonExec):
         self.jrpc_client = JrpcValidatorNode(f"http://{self.json_connect_address}")
 
     def get_address(self) -> str:
-        return ""
-        # validator_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "validator_node_id.json")
-        # while not os.path.exists(validator_node_id_file_name):
-        #     time.sleep(1)
-        # f = open(validator_node_id_file_name, "rt")
-        # content = "".join(f.readlines())
-        # node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
-        # public_address = public_address.replace("\\/", "/")
-        # return f"{public_key}::{public_address}"
+        identity = self.jrpc_client.get_identity()
+        public_key = identity["public_key"]
+        public_addresses = identity["public_addresses"]
+        return "::".join([public_key, *public_addresses])
 
     def register(self, local_ip: str):
         if USE_BINARY_EXECUTABLE:
