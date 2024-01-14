@@ -123,6 +123,12 @@ class JrpcDanWalletDaemon:
     def get_all_tx_by_status(self, status: Optional[str] = None):
         return self.call("transactions.get_all_by_status", [status])
 
+    def getFeeSummary(self, validator_public_key: str, min_):
+        return self.call("validators.get_fee_summary", [])
+
+    def claimFees(self, account: Optional[str], max_fee: Optional[int], validator_public_key: str, epoch: int):
+        return self.call("validators.claim_fees", [account, max_fee, validator_public_key, epoch])
+
 
 class DanWalletDaemon(CommonExec):
     def __init__(self, dan_wallet_id: int, indexer_jrpc_port: int, signaling_server_port: int, local_ip: str):

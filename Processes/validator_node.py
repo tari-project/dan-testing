@@ -41,6 +41,9 @@ class JrpcValidatorNode:
     def get_network_committees(self):
         return self.call("get_network_committees")
 
+    def get_fees(self, min_epoch, max_epoch, validator_node):
+        return self.call("get_fees", [[min_epoch, max_epoch], validator_node])
+
 
 class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):
@@ -84,6 +87,8 @@ class ValidatorNode(CommonExec):
             "-p",
             f"validator_node.http_ui_address={self.http_listen_address}",
             "-p",
+            f"validator_node.auto_register={False}",
+            "-p",
             f"validator_node.no_fees={NO_FEES}",
             "--ui-connect-address",
             f"http://{self.json_connect_address}",
@@ -105,7 +110,7 @@ class ValidatorNode(CommonExec):
         public_addresses = identity["public_addresses"]
         return "::".join([public_key, *public_addresses])
 
-    def register(self, local_ip: str):
+    def register(self, local_ip: str, claim_public_key: str = "d6d21f5c18406b390ce405fd21773d90bddb221b38c950dccf8f26840937004d"):
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_validator_node_cli")]
         else:
@@ -126,7 +131,7 @@ class ValidatorNode(CommonExec):
             # "1000",
             "vn",
             "register",
-            "d6d21f5c18406b390ce405fd21773d90bddb221b38c950dccf8f26840937004d",
+            claim_public_key,
         ]
         if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
             self.cli_process = SubprocessWrapper.call(

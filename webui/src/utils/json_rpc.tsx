@@ -56,6 +56,8 @@ export async function jsonRpc(method: string, ...args: any[]) {
   });
   let json = await response.json();
   if (json.error) {
+    console.error(method);
+    console.error(...args);
     console.error(json.error);
     throw json.error;
   }
