@@ -51,9 +51,7 @@ accounts: dict[str, Any] = {}
 
 
 def cli_loop():
-    global miner, tari_connector_sample, server, accounts
-    commands = Commands(tari_connector_sample, server, signaling_server)
-    server = JrpcWebuiServer(commands)
+    global miner, tari_connector_sample, webui_server, accounts
     try:
         while True:
             try:
@@ -156,7 +154,7 @@ def cli_loop():
                         else:
                             print("No tari connector sample")
                     elif command == "http webui":
-                        url = f"http://{local_ip}:{server.webui.http_port}"
+                        url = f"http://{local_ip}:{webui_server.webui.http_port}"
                         print(url)
                         webbrowser.open(url)
                     else:
@@ -185,22 +183,25 @@ def cli_loop():
                         # which = what.split()
                 elif command.startswith("start"):
                     what = command.split(maxsplit=1)[1]
+                    r = re.match(r"^(vn|indexer)(?: (\d+))?(?: ([a-zA-Z0-9]{64}))?$", what)
+                    if r is None:
+                        print("Invalid start command", command)
+                        continue
+                    what, index, pk = r.groups()
                     if what == "vn":
-                        vn_id = max(validator_nodes.validator_nodes.keys())+1
-                        validator_nodes.add_validator_node(vn_id)
-                        print("Adding VN", vn_id)
-                        validator_nodes.validator_nodes[vn_id].register(local_ip)
-                    elif r := re.match(r"vn (\d+)", what):
-                        vn_id = int(r.group(1))
-                        validator_nodes.add_validator_node(vn_id)
-                        validator_nodes.validator_nodes[vn_id].register(local_ip)
+                        if index is None:
+                            index = max(validator_nodes.validator_nodes.keys())+1
+                        else:
+                            index = int(index)
+                        validator_nodes.add_validator_node(index)
+                        print("Adding VN", index)
+                        validator_nodes.validator_nodes[index].register(local_ip, pk)
                     elif what == "indexer":
-                        indexer_id = max(indexers.indexers.keys())+1
-                        indexers.add_indexer(indexer_id)
-                        print("Adding indexer", indexer_id)
-                    elif r := re.match(r"indexer (\d+)", what):
-                        indexer_id = int(r.group(1))
-                        indexers.add_indexer(indexer_id)
+                        if index is None:
+                            index = max(indexers.indexers.keys())+1
+                        else:
+                            index = int(index)
+                        indexers.add_indexer(index)
                 elif command == "live":
                     if "base_node" in locals():
                         print("Base node is running")
@@ -212,6 +213,11 @@ def cli_loop():
                 elif command == "tx":
                     template.call_function(TEMPLATE_FUNCTION[0], dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS)
                     pass
+                elif command.startswith("st"):
+                    if command == "st":
+                        stress_test()
+                    else:
+                        stress_test(int(command.split()[1]))
                 elif command.startswith("eval"):
                     # In case you need for whatever reason access to the running python script
                     eval(for_eval[len("eval ") :])
@@ -227,7 +233,7 @@ def cli_loop():
     except Exception as ex:
         print("Failed in CLI loop:", ex)
         traceback.print_exc()
-    del server
+    del webui_server
 
 
 # this is how many times we send the funds back and forth for each of two wallets
@@ -378,6 +384,7 @@ try:
         print_step("Starting signalling server")
         signaling_server = SignalingServer(local_ip)
         signaling_server_jrpc_port = signaling_server.json_rpc_port
+
     print_step("CREATING DAN WALLETS DAEMONS")
 
     def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
@@ -425,6 +432,19 @@ try:
     validator_nodes.wait_for_sync()
 
     indexers.wait_for_sync()
+
+    if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
+        if not STEPS_RUN_SIGNALLING_SERVER:
+            print("Starting tari-connector test without signaling server is pointless!")
+        else:
+            print_step("Starting tari-connector test website")
+            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
+    else:
+        tari_connector_sample = None
+
+    commands = Commands(tari_connector_sample, server, signaling_server)
+    webui_server = JrpcWebuiServer(commands)
+
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
@@ -519,14 +539,6 @@ try:
             method = template_name[1].replace("!", "")
             template.call_function(method, dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS, dump_into_account)
 
-    if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
-        if not STEPS_RUN_SIGNALLING_SERVER:
-            print("Starting tari-connector test without signaling server is pointless!")
-        else:
-            print_step("Starting tari-connector test website")
-            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
-    else:
-        tari_connector_sample = None
     if STRESS_TEST:
         stress_test()
     print(stats)

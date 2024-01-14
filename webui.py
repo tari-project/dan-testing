@@ -37,7 +37,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
                         pass
                     path = f"{uploaded_file.filename}"
                     if os.path.exists(os.path.join(DATA_FOLDER, "templates", path)):
-                       os.remove(os.path.join(DATA_FOLDER, "templates", path))
+                        os.remove(os.path.join(DATA_FOLDER, "templates", path))
                     f = open(os.path.join(DATA_FOLDER, "templates", uploaded_file.filename), "wb")
                     f.write(uploaded_file.file.read())
                     f.close()
@@ -124,7 +124,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
             http_address = self.commands.http_connector()
             if http_address:
                 return Success(http_address)
-            return InvalidParams()
+            return Success("")
 
         @method
         def mine(blocks: int) -> Result:
