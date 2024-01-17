@@ -343,15 +343,6 @@ try:
     miner.start(base_node.grpc_port, wallet.grpc_port, local_ip)
     # Mine some blocks
     miner.mine((SPAWN_VNS + SPAWN_INDEXERS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
-    # Start VNs
-    print_step("CREATING VNS")
-    for vn_id in range(SPAWN_VNS):
-        validator_nodes.add_validator_node(vn_id)
-    validator_nodes.wait_for_sync()
-
-    print_step("REGISTER THE VNS")
-    # Register VNs
-    validator_nodes.register()
 
     if SPAWN_INDEXERS > 0:
         print_step("STARTING INDEXERS")
@@ -361,10 +352,10 @@ try:
             time.sleep(1)
             # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
             # to start comms
-            try:
-                indexers[id].jrpc_client.get_substate("component_d082c9cfb6507e302d5e252f43f4c008924648fc9bff18eaca5820a87808fc42", 0)
-            except:
-                pass
+            # try:
+            #     indexers[id].jrpc_client.get_substate("component_d082c9cfb6507e302d5e252f43f4c008924648fc9bff18eaca5820a87808fc42", 0)
+            # except:
+            #     pass
 
         for id in range(SPAWN_INDEXERS):
             threads.add(spawn_indexer, (id,))
@@ -402,6 +393,24 @@ try:
             )
 
     threads.wait()
+
+    # Create a new key so we register all VNs to this public key and then create TestAccount_0 for it. So we can claim the fees.
+    dan_wallets[0].jrpc_client.auth()
+    new_key = dan_wallets[0].jrpc_client.keys_create()
+    if not new_key:
+        raise Exception("Failed to create a key")
+    claim_public_key : str = new_key["public_key"]
+    new_key_id : str = new_key["id"]
+
+    # Start VNs
+    print_step("CREATING VNS")
+    for vn_id in range(SPAWN_VNS):
+        validator_nodes.add_validator_node(vn_id)
+    validator_nodes.wait_for_sync()
+
+    print_step("REGISTER THE VNS")
+    # Register VNs
+    validator_nodes.register(claim_public_key)
 
     miner.mine(23)
     validator_nodes.wait_for_sync()
@@ -454,7 +463,10 @@ try:
             name = {"Name": f"TestAccount_{i}"}
             dan_wallet_jrpc = dan_wallets[i % SPAWN_WALLETS].jrpc_client
             print(f"Account {name["Name"]} creation started")
-            dan_wallet_jrpc.create_free_test_coins(name, amount)
+            if i == 0:
+                dan_wallet_jrpc.create_free_test_coins(name, amount, key_id = int(new_key_id))
+            else:
+                dan_wallet_jrpc.create_free_test_coins(name, amount)
             print(f"Account {name["Name"]} created")
 
         threads.set_semaphore_limit(1)
