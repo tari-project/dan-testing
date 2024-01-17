@@ -41,6 +41,9 @@ class JrpcDanWalletDaemon:
     def keys_list(self):
         return self.call("keys.list")
 
+    def keys_create(self, specific_index: Optional[int] = None):
+        return self.call("keys.create", {"specific_index": specific_index})
+
     def accounts_create(self, name: str, custom_access_rules: Any = None, fee: Optional[int] = None, is_default: bool = True, key_id: Optional[int] = None):
         id = stats.start_run("accounts.create")
         res = self.call("accounts.create", [name, custom_access_rules, fee, is_default, key_id])

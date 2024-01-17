@@ -54,6 +54,21 @@ class GrpcBaseNode:
         request = base_node_pb2.GetActiveValidatorNodesRequest(height=height)
         return self.stub.GetActiveValidatorNodes(request)
 
+    def search_utxos(self, commitments: list[bytes]):
+        request = base_node_pb2.SearchUtxosRequest(commitments=commitments)
+        return self.stub.SearchUtxos(request)
+
+    def get_signature(self, public_nonce: str | bytes, signature: str | bytes) -> types_pb2.Signature:
+        if type(public_nonce) == str:
+            public_nonce = bytes.fromhex(public_nonce)
+        if type(signature) == str:
+            signature = bytes.fromhex(signature)
+        return types_pb2.Signature(public_nonce=public_nonce, signature=signature)
+
+    def search_kernels(self, signatures: list[types_pb2.Signature]):
+        request = base_node_pb2.SearchKernelsRequest(signatures=signatures)
+        return self.stub.SearchKernels(request)
+
 
 class BaseNode(CommonExec):
     def __init__(self):
