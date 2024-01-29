@@ -83,14 +83,14 @@ class ValidatorNode(CommonExec):
             # "-p",
             # f"validator_node.public_address={self.public_address}",
             "-p",
-            f"validator_node.json_rpc_address={self.json_listen_address}",
+            f"validator_node.json_rpc_listener_address={self.json_listen_address}",
             "-p",
-            f"validator_node.http_ui_address={self.http_listen_address}",
+            f"validator_node.http_ui_listener_address={self.http_listen_address}",
             "-p",
             f"validator_node.auto_register={False}",
             "-p",
             f"validator_node.no_fees={NO_FEES}",
-            "--ui-connect-address",
+            "--json-rpc-public-address",
             f"http://{self.json_connect_address}",
         ]
         self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
