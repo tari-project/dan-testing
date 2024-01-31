@@ -30,6 +30,10 @@ class GrpcWallet:
         request = types_pb2.Empty()
         return self.stub.Identify(request)
 
+    def get_address(self):
+        request = types_pb2.Empty()
+        return self.stub.GetAddress(request)
+
     def get_balance(self) -> wallet_pb2.GetBalanceResponse:
         request = wallet_pb2.GetBalanceRequest()
         return self.stub.GetBalance(request)

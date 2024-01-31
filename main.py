@@ -340,7 +340,7 @@ try:
     # Start wallet
     wallet.start(base_node.get_address(), local_ip)
     # Set ports for miner
-    miner.start(base_node.grpc_port, wallet.grpc_port, local_ip)
+    miner.start(base_node.grpc_port, wallet.grpc_client.get_address().address.hex(), local_ip)
     # Mine some blocks
     miner.mine((SPAWN_VNS + SPAWN_INDEXERS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
 

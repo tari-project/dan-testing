@@ -90,6 +90,7 @@ class BaseNode(CommonExec):
             "-n",
             "--network",
             NETWORK,
+            "--mining-enabled",
             "-p",
             "base_node.p2p.transport.type=tcp",
             "-p",
