@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.3
 
 # https://hub.docker.com/_/rust
-ARG RUST_VERSION=1.72
+ARG RUST_VERSION=1.75
 
 # Node Version
 ARG NODE_MAJOR=20
@@ -68,6 +68,7 @@ WORKDIR /tari
 ADD tari .
 ADD cross-compile-aarch64.sh .
 
+RUN /tari/scripts/install_ubuntu_dependencies.sh
 RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; then \
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
       # source /tari/cross-compile-aarch64.sh
@@ -153,6 +154,7 @@ WORKDIR /tari-dan
 ADD tari-dan .
 ADD cross-compile-aarch64.sh .
 
+RUN /tari-dan/scripts/install_ubuntu_dependencies.sh
 RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; then \
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
       # source /tari-dan/cross-compile-aarch64.sh
