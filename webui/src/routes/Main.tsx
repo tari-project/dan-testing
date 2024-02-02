@@ -462,8 +462,8 @@ export default function Main() {
       <div>
         <div className="label">Base Wallets</div>
         <ShowInfos
-          nodes={baseNodes}
-          executable={Executable.BaseNode}
+          nodes={baseWallets}
+          executable={Executable.BaseWallet}
           logs={logs}
           stdoutLogs={stdoutLogs}
           showLogs={showLogs}
