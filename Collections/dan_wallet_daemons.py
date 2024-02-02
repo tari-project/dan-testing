@@ -1,8 +1,4 @@
 from Processes.dan_wallet_daemon import DanWalletDaemon
-import time
-from Processes.base_node import base_node
-from Processes.wallet import wallet
-from Collections.validator_nodes import validator_nodes
 from Common.local_ip import local_ip
 from typing import Optional
 
@@ -24,7 +20,7 @@ class DanWalletDaemons:
         for id in self.dan_wallets:
             print(f"DanWalletDaemon<{id}> is running")
 
-    def add_dan_wallet_daemon(self, id: int, indexer_jrpc: int, signaling_server_jrpc: int):
+    def add_dan_wallet_daemon(self, id: int, indexer_jrpc: int, signaling_server_jrpc: Optional[int]):
         if self.has_dan_wallet(id):
             print(f"Dan wallet daemon id ({id}) is already in use")
             return

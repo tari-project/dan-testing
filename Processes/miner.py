@@ -1,5 +1,3 @@
-# type:ignore
-
 from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_MINER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
@@ -9,10 +7,9 @@ import time
 
 class Miner:
     def __init__(self):
-        pass
-
-    def start(self, base_node_grpc_port, wallet_payment_address, local_ip):
         self.name = "sha"
+
+    def start(self, base_node_grpc_port: int, wallet_payment_address: str, local_ip: str):
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_BINS_FOLDER, "minotari_miner")]
         else:

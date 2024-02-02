@@ -1,54 +1,56 @@
 # -*- coding: utf-8 -*-
-# type: ignore
 
-from grpc import insecure_channel
+from grpc import insecure_channel  # type: ignore
 
 try:
-    from protos import wallet_pb2_grpc, wallet_pb2, types_pb2
+    from protos import wallet_pb2_grpc, wallet_pb2, types_pb2, network_pb2
 except:
     print("You forgot to generate protos, run protos.sh or protos.bat")
     exit()
 
 from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
-from typing import Any
 from Processes.common_exec import CommonExec
 import time
 import os
+from typing import Any
 
 
 class GrpcWallet:
-    def __init__(self, grpc_url):
+    def __init__(self, grpc_url: str):
         self.address = grpc_url
         self.channel = insecure_channel(self.address)
         self.stub = wallet_pb2_grpc.WalletStub(self.channel)
 
-    def get_version(self):
-        request = types_pb2.Empty()
-        return self.stub.GetVersion(request)
+    def get_version(self) -> wallet_pb2.GetVersionResponse:
+        request = wallet_pb2.GetVersionRequest()
+        return self.stub.GetVersion(request)  # type:ignore
 
-    def get_identity(self):
-        request = types_pb2.Empty()
-        return self.stub.Identify(request)
+    def get_identity(self) -> network_pb2.GetIdentityResponse:
+        request = network_pb2.GetIdentityRequest()
+        return self.stub.Identify(request)  # type:ignore
 
-    def get_address(self):
+    def get_address(self) -> wallet_pb2.GetAddressResponse:
         request = types_pb2.Empty()
-        return self.stub.GetAddress(request)
+        return self.stub.GetAddress(request)  # type:ignore
 
     def get_balance(self) -> wallet_pb2.GetBalanceResponse:
         request = wallet_pb2.GetBalanceRequest()
-        return self.stub.GetBalance(request)
+        return self.stub.GetBalance(request)  # type:ignore
 
-    def burn(self, amount: int, claim_public_key: bytes, fee_per_gram: int = 5) -> Any:
-        request = wallet_pb2.CreateBurnTransactionRequest(amount=amount, fee_per_gram=fee_per_gram, claim_public_key=claim_public_key)
-        return self.stub.CreateBurnTransaction(request)
+    def check_connectivity(self) -> wallet_pb2.CheckConnectivityResponse:
+        request = wallet_pb2.GetConnectivityRequest()
+        return self.stub.CheckConnectivity(request)  # type:ignore
+
+    def create_burn_transaction(
+        self, amount: int, claim_public_key: bytes, message: str = "", fee_per_gram: int = 5
+    ) -> wallet_pb2.CreateBurnTransactionResponse:
+        request = wallet_pb2.CreateBurnTransactionRequest(amount=amount, fee_per_gram=fee_per_gram, message=message, claim_public_key=claim_public_key)
+        return self.stub.CreateBurnTransaction(request)  # type:ignore
 
 
-class Wallet(CommonExec):
-    def __init__(self):
-        pass
-
-    def start(self, base_node_address, local_ip):
-        super().__init__("Wallet")
+class BaseWallet(CommonExec):
+    def __init__(self, id: int, base_node_address: str, local_ip: str, peer_seeds: list[str] = []):
+        super().__init__("BaseWallet", id)
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
@@ -59,7 +61,7 @@ class Wallet(CommonExec):
         self.exec = [
             *run,
             "-b",
-            os.path.join(DATA_FOLDER, "wallet"),
+            os.path.join(DATA_FOLDER, self.name),
             "-n",
             "--network",
             NETWORK,
@@ -81,6 +83,10 @@ class Wallet(CommonExec):
             # "-p",
             # f'{NETWORK}.p2p.seeds.peer_seeds=""',
         ]
+        if peer_seeds:
+            self.exec.append("-p")
+            self.exec.append(f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peer_seeds)}")
+
         self.run(REDIRECT_WALLET_STDOUT)
         # Sometimes it takes a while to establish the grpc connection
         while True:
@@ -92,9 +98,5 @@ class Wallet(CommonExec):
                 print(e)
             time.sleep(1)
 
-    def stop(self):
-        print(f'To run the wallet : {" ".join(self.exec).replace("-n ", "")}')
-        raise Exception("Base node cannot be stopped")
-
-
-wallet = Wallet()
+    def get_info_for_ui(self) -> dict[str, Any]:
+        return {"name": self.name, "grpc": self.grpc_client.address}

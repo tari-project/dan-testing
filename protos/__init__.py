@@ -1,4 +1,4 @@
-if __package__ is not None and __package__ != "":
+if __package__ != "":
     import os, sys
 
     _i = os.path.dirname(os.path.abspath(__file__))

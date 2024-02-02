@@ -1,11 +1,10 @@
-# type:ignore
 import socket, errno
 import sys
 import threading
 from Common.config import NAME_COLOR, COLOR_RESET, COLOR_BRIGHT_CYAN
 
 
-def is_port_used(port):
+def is_port_used(port: int):
     sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sck.bind(("127.0.0.1", port))
@@ -22,7 +21,7 @@ class Ports:
     def __init__(self):
         self.last_used = 18003
         self.mutex = threading.Lock()
-        self.assigned_ports = {}
+        self.assigned_ports: dict[str, int] = {}
 
     def assign_port(self, name: str) -> int:
         self.mutex.acquire()

@@ -47,7 +47,7 @@ class JrpcValidatorNode:
 
 class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):
-        super().__init__("Validator_node", node_id)
+        super().__init__("ValidatorNode", node_id)
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.json_rpc_port = self.get_port("JRPC")
@@ -137,4 +137,4 @@ class ValidatorNode(CommonExec):
             print(f"Validator node register: ok")
 
     def get_info_for_ui(self):
-        return {"http": self.http_connect_address, "jrpc": self.json_connect_address}
+        return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address}

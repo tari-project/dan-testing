@@ -1,6 +1,6 @@
 from Processes.indexer import Indexer
 import time
-from Processes.base_node import base_node
+from Collections.base_nodes import base_nodes
 from Collections.validator_nodes import validator_nodes
 from Common.local_ip import local_ip
 from typing import Optional
@@ -24,7 +24,7 @@ class Indexers:
             print(f"Indexer<{id}> is running")
 
     def wait_for_sync(self):
-        tip = base_node.grpc_client.get_tip() - 3
+        tip = base_nodes.any().grpc_client.get_tip() - 3
         print("Waiting for Indexers to sync to", tip)
         # We have to check if VNs are already running their jrpc server
         while True:
@@ -48,7 +48,7 @@ class Indexers:
         if self.has_indexer(id):
             print(f"Indexer id ({id}) is already in use")
             return
-        self.indexers[id] = Indexer(id, base_node.grpc_port, validator_nodes.get_addresses())
+        self.indexers[id] = Indexer(id, base_nodes.any().grpc_port, validator_nodes.get_addresses())
 
     def jrpc(self, index: int) -> Optional[str]:
         if index in self.indexers:
