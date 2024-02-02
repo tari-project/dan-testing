@@ -170,7 +170,6 @@ class JrpcHandler(BaseHTTPRequestHandler):
 
         @method
         def get_stdout(what: Optional[str]) -> Result:  # type:ignore
-            print("GetStdout", what)
             try:
                 if what is None:
                     logs: list[tuple[str, str]] = []
