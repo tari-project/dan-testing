@@ -10,7 +10,7 @@ from Processes.common_exec import CommonExec
 
 class TariConnectorSample(CommonExec):
     def __init__(self, signaling_server_address):
-        super().__init__("connector-sample")
+        super().__init__("TariConnector")
         npm = "npm"
         self.http_port = self.get_port("HTTP")
 

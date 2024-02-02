@@ -85,7 +85,7 @@ class Indexer(CommonExec):
         return f"{public_key}::{public_address}"
 
     def get_info_for_ui(self):
-        return {"http": self.http_connect_address, "jrpc": self.json_connect_address}
+        return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address}
 
 
 class JrpcIndexer:

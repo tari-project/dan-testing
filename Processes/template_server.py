@@ -39,3 +39,4 @@ class Server:
         if self.httpd:
             t = threading.Thread(target=self.httpd.shutdown)
             t.start()
+            del self.httpd

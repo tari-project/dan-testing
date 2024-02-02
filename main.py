@@ -1,6 +1,5 @@
 # pyright: reportUnboundVariable=false
 
-from Processes.base_node import base_node
 from Common.config import (
     TARI_BINS_FOLDER,
     TARI_DAN_BINS_FOLDER,
@@ -33,7 +32,6 @@ from Processes.template import Template
 from Processes.template_server import Server
 from Common.threads import threads
 from Common.local_ip import local_ip
-from Processes.wallet import wallet
 from commands import Commands
 from webui import JrpcWebuiServer
 import os
@@ -42,10 +40,13 @@ import shutil
 import time
 import traceback
 import webbrowser
+from Collections.base_nodes import base_nodes
+from Collections.base_wallets import base_wallets
 from Collections.validator_nodes import validator_nodes
 from Collections.indexers import indexers
 from Collections.dan_wallet_daemons import dan_wallets
-from typing import Any
+from typing import Any, Optional
+import signal
 
 accounts: dict[str, Any] = {}
 
@@ -91,82 +92,19 @@ def cli_loop():
                 elif command.startswith("grpc"):
                     what = command.split()[1]
                     print(commands.grpc(what))
-                elif command.startswith("jrpc vn"):
-                    if r := re.match(r"jrpc vn (\d+)", command):
-                        vn_id = int(r.group(1))
-                        jrpc_port = commands.jrpc_vn(vn_id)
-                        if jrpc_port:
-                            print(jrpc_port)
-                        else:
-                            print(f"VN id ({vn_id}) is invalid, either it never existed or you already stopped it")
-                elif command.startswith("jrpc dan"):
-                    if r := re.match(r"jrpc dan (\d+)", command):
-                        dan_id = int(r.group(1))
-                        jrpc_port = commands.jrpc_dan(dan_id)
-                        if jrpc_port:
-                            print(jrpc_port)
-                        else:
-                            print(f"Dan id ({dan_id}) is invalid, either it never existed or you already stopped it")
-                elif command.startswith("jrpc indexer"):
-                    if r := re.match(r"jrpc indexer (\d+)", command):
-                        indexer_id = int(r.group(1))
-                        jrpc_port = commands.jrpc_indexer(indexer_id)
-                        if jrpc_port:
-                            print(jrpc_port)
-                        else:
-                            print(f"Indexer ({indexer_id}) is invalid, either it never existed or you already stopped it")
-                elif command == ("jrpc signaling"):
-                    url = f"http://{local_ip}:{signaling_server.json_rpc_port}"
-                    print(url)
                 elif command.startswith("http"):
-                    if command.startswith("http vn"):
-                        if r := re.match(r"http vn (\d+)", command):
-                            vn_id = int(r.group(1))
-                            http_address = commands.http_vn(vn_id)
-                            if http_address:
-                                print(http_address)
-                                webbrowser.open(http_address)
-                            else:
-                                print(f"VN id ({vn_id}) is invalid, either it never existed or you already stopped it")
-                    elif command.startswith("http dan"):
-                        if r := re.match(r"http dan (\d+)", command):
-                            dan_id = int(r.group(1))
-                            http_address = commands.http_dan(dan_id)
-                            if http_address:
-                                print(http_address)
-                                webbrowser.open(http_address)
-                            else:
-                                print(f"Dan id ({dan_id}) is invalid, either it never existed or you already stopped it")
-                    elif command.startswith("http indexer"):
-                        if r := re.match(r"http indexer (\d+)", command):
-                            indexer_id = int(r.group(1))
-                            http_address = commands.http_indexer(indexer_id)
-                            if http_address:
-                                print(http_address)
-                                webbrowser.open(http_address)
-                            else:
-                                print(f"Indexer id ({indexer_id}) is invalid, either it never existed or you already stopped it")
-                    elif command == "http connector":
-                        if tari_connector_sample:
-                            url = f"http://{local_ip}:{tari_connector_sample.http_port}"
-                            print(url)
-                            webbrowser.open(url)
-                        else:
-                            print("No tari connector sample")
-                    elif command == "http webui":
                         url = f"http://{local_ip}:{webui_server.webui.http_port}"
                         print(url)
                         webbrowser.open(url)
-                    else:
-                        print("Invalid http request")
                 elif command.startswith("stop"):
                     what = command.split(maxsplit=1)[1]
+                    id = "base_node"
                     if what == "node":
-                        if base_node:
-                            base_node.stop()
+                        if base_nodes.has(id):
+                            base_nodes[id].stop()
                     elif what == "wallet":
-                        if wallet:
-                            wallet.stop()
+                        if base_wallets.has(id):
+                            base_wallets[id].stop()
                     else:
                         # This should be 'VN <id>'
                         if r := re.match(r"vn (\d+)", what):
@@ -190,7 +128,7 @@ def cli_loop():
                     what, index, pk = r.groups()
                     if what == "vn":
                         if index is None:
-                            index = max(validator_nodes.validator_nodes.keys())+1
+                            index = max(validator_nodes.validator_nodes.keys()) + 1
                         else:
                             index = int(index)
                         validator_nodes.add_validator_node(index)
@@ -198,7 +136,7 @@ def cli_loop():
                         validator_nodes.validator_nodes[index].register(local_ip, pk)
                     elif what == "indexer":
                         if index is None:
-                            index = max(indexers.indexers.keys())+1
+                            index = max(indexers.indexers.keys()) + 1
                         else:
                             index = int(index)
                         indexers.add_indexer(index)
@@ -239,7 +177,7 @@ def cli_loop():
 # this is how many times we send the funds back and forth for each of two wallets
 def stress_test(num_of_tx: int = 1, dry_run: bool = False):
     # The dry run is ignored for now, once there will be a change in the PR I will update this.
-    global base_node, miner, tari_connector_sample, server
+    global miner, tari_connector_sample, server
     global total_num_of_tx
     total_num_of_tx = 0
 
@@ -289,10 +227,17 @@ def check_executable(bins_folder: str, file_name: str):
         exit()
 
 
+server = None
+tari_connector_sample = None
+signaling_server = None
+signaling_server_jrpc_port = None
+webui_server = None
+commands = None
+
 try:
     if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE or DELETE_STDOUT_LOGS:
         if os.path.exists(DATA_FOLDER):
-            for file in os.listdir(DATA_FOLDER):
+            for file in os.listdir(DATA_FOLDER): 
                 full_path = os.path.join(os.getcwd(), DATA_FOLDER, file)
                 if os.path.isdir(full_path):
                     if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE:
@@ -327,6 +272,21 @@ try:
     print_step("STARTING HTTP SERVER")
     server = Server()
     server.run()
+    if STEPS_RUN_SIGNALLING_SERVER:
+        print_step("Starting signalling server")
+        signaling_server = SignalingServer(local_ip)
+        signaling_server_jrpc_port = signaling_server.json_rpc_port
+
+    if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
+        if not STEPS_RUN_SIGNALLING_SERVER:
+            print("Starting tari-connector test without signaling server is pointless!")
+        else:
+            print_step("Starting tari-connector test website")
+            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
+
+    commands = Commands(tari_connector_sample, server, signaling_server)
+
+    webui_server = JrpcWebuiServer(commands)
     templates: dict[str, Template] = {}
     if STEPS_CREATE_TEMPLATE:
         print_step("GENERATING TEMPLATE")
@@ -335,12 +295,12 @@ try:
             templates[t] = Template(t)
     print_step("STARTING BASE NODE")
     # Start base node
-    base_node.start(local_ip)
+    base_nodes.add()
     print_step("STARTING WALLET")
     # Start wallet
-    wallet.start(base_node.get_address(), local_ip)
+    base_wallets.add()
     # Set ports for miner
-    miner.start(base_node.grpc_port, wallet.grpc_client.get_address().address.hex(), local_ip)
+    miner.start(base_nodes.any().grpc_port, base_wallets.any().grpc_client.get_address().address.hex(), local_ip)
     # Mine some blocks
     miner.mine((SPAWN_VNS + SPAWN_INDEXERS + SPAWN_WALLETS) * 2 + 13)  # Make sure we have enough funds
 
@@ -370,19 +330,13 @@ try:
     if SPAWN_INDEXERS == 0 and SPAWN_WALLETS > 0:  # type: ignore
         raise Exception("Can't create a wallet when there is no indexer")
 
-    signaling_server_jrpc_port = None
-    if STEPS_RUN_SIGNALLING_SERVER:
-        print_step("Starting signalling server")
-        signaling_server = SignalingServer(local_ip)
-        signaling_server_jrpc_port = signaling_server.json_rpc_port
-
     print_step("CREATING DAN WALLETS DAEMONS")
 
-    def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: int):
+    def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: Optional[int]):
         dan_wallets.add_dan_wallet_daemon(dwallet_id, indexer_jrpc, signaling_server_jrpc)
 
     for dwallet_id in range(SPAWN_WALLETS):
-        if SPAWN_INDEXERS > 0 and signaling_server_jrpc_port:
+        if SPAWN_INDEXERS > 0:
             threads.add(
                 create_wallet,
                 (
@@ -393,7 +347,7 @@ try:
             )
 
     threads.wait()
-
+    print(dan_wallets.dan_wallets.keys())
     # Create a new key so we register all VNs to this public key and then create TestAccount_0 for it. So we can claim the fees.
     dan_wallets[0].jrpc_client.auth()
     new_key = dan_wallets[0].jrpc_client.keys_create()
@@ -441,19 +395,6 @@ try:
     validator_nodes.wait_for_sync()
 
     indexers.wait_for_sync()
-
-    if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
-        if not STEPS_RUN_SIGNALLING_SERVER:
-            print("Starting tari-connector test without signaling server is pointless!")
-        else:
-            print_step("Starting tari-connector test website")
-            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
-    else:
-        tari_connector_sample = None
-
-    commands = Commands(tari_connector_sample, server, signaling_server)
-    webui_server = JrpcWebuiServer(commands)
-
 
     if STEPS_CREATE_ACCOUNT:
         print_step("CREATING ACCOUNTS")
@@ -561,19 +502,13 @@ except Exception as ex:
 except KeyboardInterrupt:
     print("ctrl-c pressed during setup")
 
-if "tari_connector_sample" in locals():
-    del tari_connector_sample
-if "signaling_server" in locals():
-    del signaling_server
-if "dan_wallets" in locals():
-    del dan_wallets
-if "indexers" in locals():
-    del indexers
-if "validator_nodes" in locals():
-    del validator_nodes
-if "wallet" in locals():
-    del wallet
-if "base_node" in locals():
-    del base_node
-if "server" in locals():
-    del server
+del webui_server
+del commands
+del tari_connector_sample
+del signaling_server
+del dan_wallets
+del indexers
+del validator_nodes
+del base_wallets
+del base_nodes
+del server

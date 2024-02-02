@@ -1,8 +1,8 @@
 from Processes.validator_node import ValidatorNode
 import time
-from Processes.base_node import base_node
-from Processes.wallet import wallet
 from Processes.miner import miner
+from Collections.base_wallets import base_wallets
+from Collections.base_nodes import base_nodes
 from Common.local_ip import local_ip
 from typing import Optional
 
@@ -25,7 +25,7 @@ class ValidatorNodes:
             print(f"VN<{vn_id}> is running")
 
     def wait_for_sync(self):
-        tip = base_node.grpc_client.get_tip() - 3
+        tip = base_nodes.any().grpc_client.get_tip() - 3
         print("Waiting for VNs to sync to", tip)
         # We have to check if VNs are already running their jrpc server
         while True:
@@ -49,12 +49,12 @@ class ValidatorNodes:
         if self.has_vn(vn_id):
             print(f"VN id ({vn_id}) is already in use")
             return
-        self.validator_nodes[vn_id] = ValidatorNode(base_node.grpc_port, wallet.grpc_port, vn_id, self.get_addresses())
+        self.validator_nodes[vn_id] = ValidatorNode(base_nodes.any().grpc_port, base_wallets.any().grpc_port, vn_id, self.get_addresses())
 
     def register(self, claim_public_key: str):
         print("Waiting for wallet balance", end=".")
         for vn_id in self.validator_nodes:
-            while wallet.grpc_client.get_balance().available_balance == 0:
+            while base_wallets.any().grpc_client.get_balance().available_balance == 0:
                 time.sleep(1)
                 print(".", end="")
             self.validator_nodes[vn_id].register(local_ip, claim_public_key)
@@ -66,7 +66,7 @@ class ValidatorNodes:
         i = 0
         print("Waiting for X tx's in mempool.", end="")
         while i < 10:
-            if base_node.grpc_client.get_mempool_size() < len(self.validator_nodes) + 1:
+            if base_nodes.any().grpc_client.get_mempool_size() < len(self.validator_nodes) + 1:
                 print(".", end="")
                 time.sleep(1)
             else:
@@ -94,7 +94,7 @@ class ValidatorNodes:
     def __iter__(self):
         return iter(self.validator_nodes)
 
-    def __getitem__(self, index: int):
+    def __getitem__(self, index: int) -> ValidatorNode:
         return self.validator_nodes[index]
 
 

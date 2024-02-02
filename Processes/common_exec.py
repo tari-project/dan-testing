@@ -5,79 +5,58 @@ import subprocess
 from Common.ports import ports
 from typing import Optional, Any, Union
 from Common.config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
-import psutil
-import os
-import traceback
-
-
-def kill_process_tree(pid: int):
-    print("kill_process_tree", pid)
-    try:
-        parent = psutil.Process(pid)
-        print("parent", parent)
-        children = parent.children(recursive=True)
-        for child in children:
-            print("child", child)
-            child.send_signal(signal.SIGTERM)
-        parent.send_signal(signal.SIGTERM)
-    except psutil.NoSuchProcess:
-        pass
+import sys
 
 
 class CommonExec:
     def __init__(self, name: str, id: Optional[int] = None):
         self.env: dict[str, str] = {}
         self.id = id
-        if id is not None:
-            self.name = f"{name}_{id}"
-        else:
+        if id is None:
             self.name = name
+        else:
+            self.name = f"{name}_{id}"
         self.exec = ""
         self.process: Optional[subprocess.Popen[Any]] = None
+        self.running = False
 
     def get_port(self, interface: str) -> int:
         return ports.get_free_port(f"{self.name} {interface}")
 
     def run(self, redirect: Union[bool, int], cwd: Optional[str] = None):
         env: dict[str, str] = os.environ.copy()
-        if (self.id is not None and self.id >= redirect) or (self.id is None and redirect):
-            self.process = SubprocessWrapper.Popen(
-                self.exec,
-                stdin=subprocess.PIPE,
-                stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}.log"), "a+"),
-                stderr=subprocess.STDOUT,
-                env={**env, **self.env},
-                cwd=cwd,
-            )
+        self.process = SubprocessWrapper.Popen(
+            self.exec,
+            stdin=subprocess.PIPE,
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}.log"), "a+"),
+            stderr=subprocess.STDOUT,
+            env={**env, **self.env},
+            cwd=cwd,
+        )
+        self.running = True
+
+    def is_running(self) -> bool:
+        if self.process:
+            return self.process.poll() is None
+        return False
+
+    def stop(self):
+        if not self.process or not self.is_running():
+            return
+        print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
+        print(f"To run {EXEC_COLOR}{' '.join(self.exec).replace(" -n", "")}{COLOR_RESET}", end=" ")
+        if self.env:
+            print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
+        if sys.platform == "win32":
+            # You can't send ctrl+c to a process in windows without sending it to the whole process group
+            self.process.send_signal(signal.SIGTERM)
         else:
-            self.process = SubprocessWrapper.Popen(self.exec, stdin=subprocess.PIPE, env={**env, **self.env}, cwd=cwd)
+            # This closes the process correctly
+            self.process.send_signal(signal.SIGINT)
+        del self.process
 
     def __del__(self):
-        try:
-            print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
-            print(f"To run {EXEC_COLOR}{' '.join(self.exec)}{COLOR_RESET}", end=" ")
-            if self.env:
-                print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
-            print()
-            if self.process:
-                # try:
-                #     print("CTRL_C_EVENT")
-                #     self.process.send_signal(signal.SIGBREAK)
-                #     self.process.send_signal(signal.SIGBREAK)
-                # except:
-                #     pass
-                # print("kill_process_tree")
-                kill_process_tree(self.process.pid)
-                if self.process:
-                    print("kill")
-                    self.process.terminate()
-                    self.process.kill()
-                del self.process
-            print(f"Killed successfuly {NAME_COLOR}{self.name}{COLOR_RESET}")
-        except Exception as e:
-            print(e)
-            print("Something went wrong")
-        # traceback.print_stack()
+        self.stop()
 
     def get_logs(self):
         logs: list[tuple[str, str, str]] = []

@@ -7,7 +7,7 @@ from Processes.common_exec import CommonExec
 
 class SignalingServer(CommonExec):
     def __init__(self, local_ip):
-        super().__init__("Signaling_server")
+        super().__init__("SignalingServer")
         self.json_rpc_port = self.get_port("JRPC")
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_signaling_server")]
