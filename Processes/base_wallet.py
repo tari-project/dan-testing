@@ -105,4 +105,4 @@ class BaseWallet(CommonExec):
         return True
 
     def get_info_for_ui(self) -> dict[str, Any]:
-        return {"name": self.name, "grpc": self.grpc_client.address}
+        return {"name": self.name, "grpc": self.grpc_client.address, "is_running": self.is_running()}

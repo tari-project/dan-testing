@@ -137,4 +137,4 @@ class ValidatorNode(CommonExec):
         print(f"Validator node register: ok")
 
     def get_info_for_ui(self):
-        return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address}
+        return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address, "is_running": self.is_running()}

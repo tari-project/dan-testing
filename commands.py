@@ -2,6 +2,7 @@ from Processes.miner import miner
 from Processes.signaling_server import SignalingServer
 from Processes.tari_connector_sample import TariConnectorSample
 from Processes.template_server import Server
+from Processes.common_exec import all_processes
 from typing import Optional
 from Collections.base_wallets import base_wallets
 from Collections.validator_nodes import validator_nodes
@@ -57,36 +58,19 @@ class Commands:
         self.miner.mine(blocks)  # Mine the register TXs
 
     def start(self, what: str) -> bool:
-        id = process_type.get_index(what)
-        if id is None:
+        if what not in all_processes:
             return False
-        if process_type.is_validator_node(what):
-            return self.validator_nodes.start(id)
-        if process_type.is_indexer(what):
-            return self.indexers.start(id)
-        if process_type.is_asset_wallet(what):
-            return self.dan_wallets.start(id)
-        if process_type.is_base_wallet(what):
-            return self.base_wallets.start(id)
-        if process_type.is_base_node(what):
-            return self.base_nodes.start(id)
-        return False
+        return all_processes[what].run()
 
     def stop(self, what: str) -> bool:
-        id = process_type.get_index(what)
-        if id is None:
+        if what not in all_processes:
             return False
-        if process_type.is_validator_node(what):
-            return self.validator_nodes.stop(id)
-        if process_type.is_indexer(what):
-            return self.indexers.stop(id)
-        if process_type.is_asset_wallet(what):
-            return self.dan_wallets.stop(id)
-        if process_type.is_base_wallet(what):
-            return self.base_wallets.stop(id)
-        if process_type.is_base_node(what):
-            return self.base_nodes.stop(id)
-        return False
+        return all_processes[what].stop()
+
+    def is_running(self, what: str) -> bool:
+        if what not in all_processes:
+            return False
+        return all_processes[what].is_running()
 
     def grpc(self, what: str) -> Optional[str]:
         id = process_type.get_index(what)

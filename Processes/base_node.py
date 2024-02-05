@@ -134,4 +134,4 @@ class BaseNode(CommonExec):
         return f"{public_key}::{public_address}"
 
     def get_info_for_ui(self) -> dict[str, Any]:
-        return {"name": self.name, "grpc": self.grpc_client.address, "address": self.get_address()}
+        return {"name": self.name, "grpc": self.grpc_client.address, "address": self.get_address(), "is_running": self.is_running()}
