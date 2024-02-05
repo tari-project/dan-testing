@@ -10,9 +10,10 @@ class DanWalletDaemons(Collection[DanWalletDaemon]):
     def __init__(self):
         super().__init__()
 
-    def add(self):
+    def add(self) -> str:
         id = len(self.items)
         self.items[id] = DanWalletDaemon(id, indexers[id % len(indexers)].json_rpc_port, signaling_server.json_rpc_port, local_ip)
+        return self.items[id].name
 
     def jrpc(self, index: int) -> Optional[str]:
         if index in self.items:

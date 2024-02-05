@@ -3,8 +3,6 @@ import struct
 
 from Common.config import (
     TARI_DAN_BINS_FOLDER,
-    REDIRECT_TEMPLATE_STDOUT,
-    REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT,
     USE_BINARY_EXECUTABLE,
     DATA_FOLDER,
 )
@@ -39,38 +37,29 @@ class Template:
         if not cargo_install_generate_installed:
             cargo_install_generate_installed = True
             exec = ["cargo", "install", "cargo-generate"]
-            if REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT:
-                SubprocessWrapper.call(
-                    exec,
-                    stdout=open(os.path.join(DATA_FOLDER, "stdout", f"cargo_generate_install.log"), "a+"),
-                    stderr=subprocess.STDOUT,
-                )
-            else:
-                SubprocessWrapper.call(exec)
-
-        exec = ["cargo", "generate", "--git", "https://github.com/tari-project/wasm-template.git", "-s", self.template, "-n", self.name]
-        if REDIRECT_TEMPLATE_STDOUT:
             SubprocessWrapper.call(
                 exec,
-                stdout=open(os.path.join(DATA_FOLDER, "stdout", f"template_{self.name}_cargo_generate.log"), "a+"),
+                stdout=open(os.path.join(DATA_FOLDER, "stdout", f"cargo_generate_install.log"), "a+"),
                 stderr=subprocess.STDOUT,
-                cwd=os.path.join(DATA_FOLDER, "templates"),
             )
-        else:
-            SubprocessWrapper.call(exec, cwd=os.path.join(DATA_FOLDER, "templates"))
+
+        exec = ["cargo", "generate", "--git", "https://github.com/tari-project/wasm-template.git", "-s", self.template, "-n", self.name]
+        SubprocessWrapper.call(
+            exec,
+            stdout=open(os.path.join(DATA_FOLDER, "stdout", f"template_{self.name}_cargo_generate.log"), "a+"),
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(DATA_FOLDER, "templates"),
+        )
 
     def compile(self):
         wd = os.getcwd()
         os.chdir(os.path.join(DATA_FOLDER, "templates", self.name, "package"))
         exec = ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"]
-        if REDIRECT_TEMPLATE_STDOUT:
-            SubprocessWrapper.call(
-                exec,
-                stdout=open(os.path.join("..", "..", "..", "stdout", f"template_{self.name}_cargo_build.log"), "a+"),
-                stderr=subprocess.STDOUT,
-            )
-        else:
-            SubprocessWrapper.call(exec)
+        SubprocessWrapper.call(
+            exec,
+            stdout=open(os.path.join("..", "..", "..", "stdout", f"template_{self.name}_cargo_build.log"), "a+"),
+            stderr=subprocess.STDOUT,
+        )
         os.chdir(wd)
 
     def publish_template(self, jrpc_port: int, server_port: int, local_ip: str):

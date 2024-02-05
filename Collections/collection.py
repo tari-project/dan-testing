@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
+from Processes.common_exec import CommonExec
 
-Item = TypeVar("Item")
+Item = TypeVar("Item", bound=CommonExec)
 
 
 class Collection(ABC, Generic[Item]):
@@ -12,7 +13,7 @@ class Collection(ABC, Generic[Item]):
         return id in self.items
 
     @abstractmethod
-    def add(self):
+    def add(self) -> str:
         pass
 
     def any(self) -> Item:
@@ -31,7 +32,13 @@ class Collection(ABC, Generic[Item]):
     def __getitem__(self, id: int) -> Item:
         return self.items[id]
 
-    def stop(self, id: int):
+    def start(self, id: int) -> bool:
         if self.has(id):
-            del self.items[id]
+            return self.items[id].run()
+        return False
+
+    def stop(self, id: int) -> bool:
+        if self.has(id) and self.items[id].is_running():
+            return self.items[id].stop()
         print(f"Id ({id}) is invalid, either it never existed or you already stopped it")
+        return False

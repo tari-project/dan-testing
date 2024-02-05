@@ -16,8 +16,14 @@ import webbrowser
 import process_type
 
 
+class JrpcServer(HTTPServer):
+    def __init__(self, commands: Commands, server_address: Any, RequestHandlerClass: Any, bind_and_activate: bool = True):
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+        self.commands = commands
+
+
 class JrpcHandler(BaseHTTPRequestHandler):
-    def __init__(self, request, client_address, server):
+    def __init__(self, request: Any, client_address: str, server: JrpcServer):
         self.commands: Commands = server.commands
         super().__init__(request, client_address, server)
         self.define_methods()
@@ -40,7 +46,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
                     f.write(uploaded_file.file.read())
                     f.close()
                     template = Template(path, uploaded_file.filename, from_source=False)
-                    template.publish_template(self.commands.validator_nodes.any_node().json_rpc_port, self.commands.server.port, local_ip)
+                    template.publish_template(self.commands.validator_nodes.any().json_rpc_port, self.commands.server.port, local_ip)
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
                     self.end_headers()
@@ -76,28 +82,38 @@ class JrpcHandler(BaseHTTPRequestHandler):
 
         @method
         def add_base_node() -> Result:  # type:ignore
-            self.commands.base_nodes.add()
-            return Success()
+            name = self.commands.base_nodes.add()
+            return Success({"name": name})
 
         @method
         def add_base_wallet() -> Result:  # type:ignore
-            self.commands.base_wallets.add()
-            return Success()
+            name = self.commands.base_wallets.add()
+            return Success({"name": name})
 
         @method
         def add_asset_wallet() -> Result:  # type:ignore
-            self.commands.dan_wallets.add()
-            return Success()
+            name = self.commands.dan_wallets.add()
+            return Success({"name": name})
 
         @method
         def add_indexer() -> Result:  # type:ignore
-            self.commands.indexers.add()
-            return Success()
+            name = self.commands.indexers.add()
+            return Success({"name": name})
 
         @method
         def add_validator_node() -> Result:  # type:ignore
-            self.commands.validator_nodes.add()
-            return Success()
+            name = self.commands.validator_nodes.add()
+            return Success({"name": name})
+
+        @method
+        def start(what: str) -> Result:  # type:ignore
+            success = self.commands.start(what)
+            return Success({"success": success})
+
+        @method
+        def stop(what: str) -> Result:  # type:ignore
+            success = self.commands.stop(what)
+            return Success({"success": success})
 
         @method
         def base_nodes() -> Result:  # type:ignore
@@ -244,12 +260,6 @@ class JrpcHandler(BaseHTTPRequestHandler):
             return InvalidParams("File not found")
 
 
-class JrpcServer(HTTPServer):
-    def __init__(self, commands: Commands, server_address: Any, RequestHandlerClass: Any, bind_and_activate: bool = True):
-        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
-        self.commands = commands
-
-
 class WebuiServer(CommonExec):
     def __init__(self, jrpc_webui_server_address: str, local_ip: str):
         super().__init__("webui")
@@ -266,7 +276,7 @@ class WebuiServer(CommonExec):
             self.http_port = int(WEBUI_PORT)
         self.exec = ["npm", "--prefix", "webui", "run", "dev", "--", "--port", str(self.http_port), "--host", "0.0.0.0"]
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = jrpc_webui_server_address
-        self.run(True)
+        self.run()
         if WEBUI_PORT == "auto":
             webbrowser.open(f"http://{local_ip}:{self.http_port}")
 

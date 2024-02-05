@@ -1,7 +1,7 @@
 # type:ignore
 import os
 import time
-from Common.config import TARI_DAN_BINS_FOLDER, USE_BINARY_EXECUTABLE, REDIRECT_SIGNALING_STDOUT, DATA_FOLDER
+from Common.config import TARI_DAN_BINS_FOLDER, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from Processes.common_exec import CommonExec
 
 
@@ -25,7 +25,7 @@ class SignalingServer(CommonExec):
             "--listen-addr",
             f"{local_ip}:{self.json_rpc_port}",
         ]
-        self.run(REDIRECT_SIGNALING_STDOUT)
+        self.run()
         print("Waiting for signaling server to start.", end="")
         while not os.path.exists(os.path.join(DATA_FOLDER, "signaling_server", "pid")):
             print(".", end="")

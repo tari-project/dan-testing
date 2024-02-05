@@ -7,10 +7,11 @@ class BaseNodes(Collection[BaseNode]):
     def __init__(self):
         super().__init__()
 
-    def add(self):
+    def add(self) -> str:
         id = len(self.items)
         addresses = self.get_addresses()
         self.items[id] = BaseNode(id, local_ip, addresses)
+        return self.items[id].name
 
     def get_addresses(self) -> list[str]:
         return [self.items[base_node_id].get_address() for base_node_id in self.items]

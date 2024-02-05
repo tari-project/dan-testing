@@ -3,7 +3,7 @@ import signal
 from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
 from Common.ports import ports
-from typing import Optional, Any, Union
+from typing import Optional, Any
 from Common.config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import sys
 
@@ -18,12 +18,13 @@ class CommonExec:
             self.name = f"{name}_{id}"
         self.exec = ""
         self.process: Optional[subprocess.Popen[Any]] = None
-        self.running = False
 
     def get_port(self, interface: str) -> int:
         return ports.get_free_port(f"{self.name} {interface}")
 
-    def run(self, redirect: Union[bool, int], cwd: Optional[str] = None):
+    def run(self, cwd: Optional[str] = None) -> bool:
+        if self.is_running():
+            return False
         env: dict[str, str] = os.environ.copy()
         self.process = SubprocessWrapper.Popen(
             self.exec,
@@ -33,16 +34,16 @@ class CommonExec:
             env={**env, **self.env},
             cwd=cwd,
         )
-        self.running = True
+        return True
 
     def is_running(self) -> bool:
         if self.process:
             return self.process.poll() is None
         return False
 
-    def stop(self):
+    def stop(self) -> bool:
         if not self.process or not self.is_running():
-            return
+            return False
         print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
         print(f"To run {EXEC_COLOR}{' '.join(self.exec).replace(' -n', '')}{COLOR_RESET}", end=" ")
         if self.env:
@@ -54,6 +55,8 @@ class CommonExec:
             # This closes the process correctly
             self.process.send_signal(signal.SIGINT)
         del self.process
+        self.process = None
+        return True
 
     def __del__(self):
         self.stop()

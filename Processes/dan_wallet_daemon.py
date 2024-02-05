@@ -1,4 +1,4 @@
-from Common.config import TARI_DAN_BINS_FOLDER, REDIRECT_DAN_WALLET_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_DAN_BINS_FOLDER, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import base64
 import os
 import requests
@@ -182,8 +182,13 @@ class DanWalletDaemon(CommonExec):
         ]
         if signaling_server_port:
             self.exec = [*self.exec, "--signaling-server-address", f"{local_ip}:{signaling_server_port}"]
-        self.run(REDIRECT_DAN_WALLET_STDOUT)
+        self.run()
 
+    def run(self, cwd: str | None = None) -> bool:
+        if not super().run(cwd):
+            return False
+        if not self.process:
+            return False
         # (out, err) = self.process.communicate()
         self.jrpc_client = JrpcDanWalletDaemon(f"http://{self.json_connect_address}")
         while not os.path.exists(os.path.join(DATA_FOLDER, self.name, "localnet", "pid")):
@@ -191,7 +196,8 @@ class DanWalletDaemon(CommonExec):
                 time.sleep(1)
             else:
                 raise Exception(f"DAN wallet did not start successfully: Exit code:{self.process.poll()}")
-        print(f"Dan wallet daemon {dan_wallet_id} started")
+        print(f"Dan wallet daemon {self.name} started")
+        return True
 
     def get_info_for_ui(self):
         return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address}
