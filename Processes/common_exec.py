@@ -19,6 +19,7 @@ class CommonExec:
             self.name = f"{name}_{id}"
         self.exec = ""
         self.process: Optional[subprocess.Popen[Any]] = None
+        all_processes[self.name] = self
 
     def get_port(self, interface: str) -> int:
         return ports.get_free_port(f"{self.name} {interface}")
@@ -77,3 +78,6 @@ class CommonExec:
                 if self.name in file:
                     logs.append((os.path.join(path, file), "stdout"))
         return logs
+
+
+all_processes: dict[str, CommonExec] = {}

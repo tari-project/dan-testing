@@ -163,6 +163,11 @@ class JrpcHandler(BaseHTTPRequestHandler):
             return InvalidParams()
 
         @method
+        def is_running(what: str) -> Result:  # type:ignore
+            is_running = self.commands.is_running(what)
+            return Success({"is_running": is_running})
+
+        @method
         def burn(public_key: str, outfile: str, amount: int) -> Result:  # type:ignore
             self.commands.burn(public_key, outfile, amount)
             return Success()

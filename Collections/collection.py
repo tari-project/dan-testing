@@ -42,3 +42,6 @@ class Collection(ABC, Generic[Item]):
             return self.items[id].stop()
         print(f"Id ({id}) is invalid, either it never existed or you already stopped it")
         return False
+
+    def is_running(self, id: int) -> bool:
+        return self.items[id].is_running()
