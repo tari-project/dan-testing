@@ -1,6 +1,7 @@
 # type:ignore
 
-from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_INDEXER_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from typing import Optional
+from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from Common.ports import ports
 import os
 import time
@@ -62,14 +63,19 @@ class Indexer(CommonExec):
             "-p",
             f"indexer.ui_connect_address=http://{self.json_connect_address}",
         ]
-        self.run(REDIRECT_INDEXER_STDOUT)
+        self.run()
+
+    def run(self, cwd: str | None = None) -> bool:
+        if not super().run(cwd):
+            return False
         self.jrpc_client = JrpcIndexer(f"http://{self.json_connect_address}")
         while not os.path.exists(os.path.join(DATA_FOLDER, f"indexer_{self.id}", "localnet", "pid")):
             if self.process.poll() is None:
                 time.sleep(1)
             else:
                 raise Exception(f"Indexer did not start successfully: Exit code:{self.process.poll()}")
-        print(f"Indexer {self.id} started")
+        print(f"Indexer {self.name} started")
+        return True
 
     def get_address(self):
         if NETWORK == "localnet":

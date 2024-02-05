@@ -23,11 +23,11 @@ STEP_COLOR = COLOR_BRIGHT_YELLOW
 STEP_OUTER_COLOR = COLOR_BRIGHT_GREEN
 
 
-def is_boolstring(value: str):
+def is_boolstring(value: str) -> bool:
     return value.lower() in ["false", "true", "0", "1"]
 
 
-def is_boolstring_true(value: str):
+def is_boolstring_true(value: str) -> bool:
     return value.lower() in ["true", "1"]
 
 
@@ -48,20 +48,6 @@ TARI_DAN_BINS_FOLDER = get_env_or_default("TARI_DAN_BINS_FOLDER", "bins")
 DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE = True
 DELETE_STDOUT_LOGS = True
 DELETE_TEMPLATES = False
-REDIRECT_BASE_NODE_STDOUT = True
-REDIRECT_WALLET_STDOUT = True
-REDIRECT_MINER_STDOUT = True
-# how many VNs should print to console
-REDIRECT_VN_FROM_INDEX_STDOUT = 0
-# how many dan wallets should print to console
-REDIRECT_DAN_WALLET_STDOUT = 0
-# The register vn cli is redirected as VN, this is for the publish template etc.
-REDIRECT_INDEXER_STDOUT = 0
-# This is for the cargo generate and compilation for the template
-REDIRECT_CARGO_INSTALL_CARGO_GENERATE_STDOUT = True
-REDIRECT_TEMPLATE_STDOUT = True
-REDIRECT_DAN_WALLET_WEBUI_STDOUT = True
-REDIRECT_SIGNALING_STDOUT = True
 NETWORK = "localnet"
 SPAWN_VNS = int(get_env_or_default("DAN_TESTING_SPAWN_VNS", 1))
 print("SPAWN_VNS", SPAWN_VNS)

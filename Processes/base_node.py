@@ -3,11 +3,11 @@
 from grpc import insecure_channel  # type:ignore
 
 from protos import types_pb2, base_node_pb2_grpc, base_node_pb2, network_pb2, block_pb2
-from Common.config import TARI_BINS_FOLDER, NETWORK, REDIRECT_BASE_NODE_STDOUT, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_BINS_FOLDER, NETWORK, USE_BINARY_EXECUTABLE, DATA_FOLDER
 import os
 import re
 import time
-from typing import Iterator, Any
+from typing import Iterator, Any, Optional
 from Processes.common_exec import CommonExec
 
 
@@ -68,6 +68,7 @@ class GrpcBaseNode:
 class BaseNode(CommonExec):
     def __init__(self, id: int, local_ip: str, peer_seeds: list[str] = []):
         super().__init__("BaseNode", id)
+        self.local_ip = local_ip
         self.public_port = self.get_port("public_address")
         self.public_address = f"/ip4/{local_ip}/tcp/{self.public_port}"
         self.grpc_port = self.get_port("GRPC")
@@ -103,16 +104,21 @@ class BaseNode(CommonExec):
         if peer_seeds:
             self.exec.append("-p")
             self.exec.append(f"{NETWORK}.p2p.seeds.peer_seeds={','.join(peer_seeds)}")
-        self.run(REDIRECT_BASE_NODE_STDOUT)
+        self.run()
+
+    def run(self, cwd: Optional[str] = None) -> bool:
+        if not super().run():
+            return False
         # Sometimes it takes a while to establish the grpc connection
         while True:
             try:
-                self.grpc_client = GrpcBaseNode(f"{local_ip}:{self.grpc_port}")
+                self.grpc_client = GrpcBaseNode(f"{self.local_ip}:{self.grpc_port}")
                 self.grpc_client.get_version()
                 break
             except Exception as e:
                 print(e)
             time.sleep(1)
+        return True
 
     def get_address(self) -> str:
         base_node_id_file_name = os.path.join(DATA_FOLDER, self.name, NETWORK, "config", "base_node_id.json")
@@ -120,7 +126,10 @@ class BaseNode(CommonExec):
             time.sleep(1)
         f = open(base_node_id_file_name, "rt")
         content = "".join(f.readlines())
-        node_id, public_key, public_address = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content).groups()
+        parsed = re.search(r'"node_id":"(.*?)","public_key":"(.*?)".*"public_addresses":\["(.*?)"', content)
+        if not parsed:
+            return ""
+        _, public_key, public_address = parsed.groups()
         public_address = public_address.replace("\\/", "/")
         return f"{public_key}::{public_address}"
 

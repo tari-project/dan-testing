@@ -33,9 +33,10 @@ class ValidatorNodes(Collection[ValidatorNode]):
     def get_addresses(self) -> list[str]:
         return [self.items[vn_id].get_address() for vn_id in self.items]
 
-    def add(self):
+    def add(self) -> str:
         id = len(self.items)
         self.items[id] = ValidatorNode(base_nodes.any().grpc_port, base_wallets.any().grpc_port, id, self.get_addresses())
+        return self.items[id].name
 
     def register(self, claim_public_key: str):
         print("Waiting for wallet balance", end=".")
@@ -44,7 +45,7 @@ class ValidatorNodes(Collection[ValidatorNode]):
                 time.sleep(1)
                 print(".", end="")
             self.items[vn_id].register(local_ip, claim_public_key)
-            # Uncomment next line if you want to have only one registeration per block
+            # Uncomment next line if you want to have only one registration per block
             # miner.mine(1)
         print("done")
 

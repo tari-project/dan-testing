@@ -1,5 +1,5 @@
 # type:ignore
-from Common.config import REDIRECT_DAN_WALLET_WEBUI_STDOUT, DATA_FOLDER
+from Common.config import DATA_FOLDER
 from Common.ports import ports
 import os
 from Processes.subprocess_wrapper import SubprocessWrapper
@@ -51,6 +51,5 @@ class TariConnectorSample(CommonExec):
         self.exec = [npm, "run", "dev", "--", "--port", str(self.http_port), "--host", "0.0.0.0"]
         self.env["VITE_SIGNALING_SERVER_ADDRESS"] = signaling_server_address
         self.run(
-            REDIRECT_DAN_WALLET_WEBUI_STDOUT,
             os.path.join("..", "tari-connector", "examples", "material-vite-ts"),
         )

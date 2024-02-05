@@ -32,9 +32,10 @@ class Indexers(Collection[Indexer]):
     def get_addresses(self) -> list[str]:
         return [indexer.get_address() for indexer in self.items.values()]
 
-    def add(self):
+    def add(self) -> str:
         id = len(self.items)
         self.items[id] = Indexer(id, base_nodes.any().grpc_port, validator_nodes.get_addresses())
+        return self.items[id].name
 
     def jrpc(self, index: int) -> Optional[str]:
         if index in self.items:

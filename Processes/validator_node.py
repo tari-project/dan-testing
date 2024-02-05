@@ -1,7 +1,8 @@
 # type:ignore
 
+from typing import Optional
 from Common.ports import ports
-from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, REDIRECT_VN_FROM_INDEX_STDOUT, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
+from Common.config import TARI_DAN_BINS_FOLDER, NETWORK, NO_FEES, USE_BINARY_EXECUTABLE, DATA_FOLDER
 from Processes.subprocess_wrapper import SubprocessWrapper
 import subprocess
 import os
@@ -83,7 +84,11 @@ class ValidatorNode(CommonExec):
             "--json-rpc-public-address",
             f"http://{self.json_connect_address}",
         ]
-        self.run(REDIRECT_VN_FROM_INDEX_STDOUT)
+        self.run()
+
+    def run(self, cwd: str | None = None) -> bool:
+        if not super().run(cwd):
+            return False
         print("Waiting for VN to start.", end="")
         while not os.path.exists(os.path.join(DATA_FOLDER, self.name, "localnet", "pid")):
             print(".", end="")
@@ -93,6 +98,7 @@ class ValidatorNode(CommonExec):
                 raise Exception(f"Validator node did not start successfully: Exit code:{self.process.poll()}")
         print("done")
         self.jrpc_client = JrpcValidatorNode(f"http://{self.json_connect_address}")
+        return True
 
     def get_address(self) -> str:
         identity = self.jrpc_client.get_identity()
@@ -123,18 +129,12 @@ class ValidatorNode(CommonExec):
             "register",
             claim_public_key,
         ]
-        if self.id >= REDIRECT_VN_FROM_INDEX_STDOUT:
-            self.cli_process = SubprocessWrapper.call(
-                self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}_cli.log"), "a+"), stderr=subprocess.STDOUT
-            )
-            if self.cli_process != 0:
-                raise Exception("Validator node cli registration process failed")
-            print(f"Validator node register: ok")
-        else:
-            self.cli_process = SubprocessWrapper.call(self.exec_cli)
-            if self.cli_process != 0:
-                raise Exception("Validator node cli registration process failed")
-            print(f"Validator node register: ok")
+        self.cli_process = SubprocessWrapper.call(
+            self.exec_cli, stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}_cli.log"), "a+"), stderr=subprocess.STDOUT
+        )
+        if self.cli_process != 0:
+            raise Exception("Validator node cli registration process failed")
+        print(f"Validator node register: ok")
 
     def get_info_for_ui(self):
         return {"name": self.name, "http": self.http_connect_address, "jrpc": self.json_connect_address}
