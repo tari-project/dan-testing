@@ -6,6 +6,7 @@ from Common.ports import ports
 from typing import Optional, Any
 from Common.config import NAME_COLOR, COLOR_RESET, EXEC_COLOR, DATA_FOLDER
 import sys
+from copy import deepcopy
 
 
 class CommonExec:
@@ -27,7 +28,7 @@ class CommonExec:
             return False
         env: dict[str, str] = os.environ.copy()
         self.process = SubprocessWrapper.Popen(
-            self.exec,
+            deepcopy(self.exec),
             stdin=subprocess.PIPE,
             stdout=open(os.path.join(DATA_FOLDER, "stdout", f"{self.name}.log"), "a+"),
             stderr=subprocess.STDOUT,
