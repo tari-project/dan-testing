@@ -77,7 +77,7 @@ class Commands:
         id = process_type.get_index(what)
         if id:
             if process_type.is_validator_node(what):
-                return self.validator_nodes.jrpc_vn(id)
+                return self.validator_nodes.jrpc(id)
             if process_type.is_indexer(what):
                 return self.indexers.jrpc(id)
             if process_type.is_asset_wallet(what):
@@ -90,7 +90,7 @@ class Commands:
         id = process_type.get_index(what)
         if id:
             if process_type.is_validator_node(what):
-                return self.validator_nodes.http_vn(id)
+                return self.validator_nodes.http(id)
             if process_type.is_indexer(what):
                 return self.indexers.http(id)
             if process_type.is_asset_wallet(what):

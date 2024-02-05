@@ -25,7 +25,7 @@ from Common.config import (
     USE_BINARY_EXECUTABLE,
 )
 from Processes.miner import miner
-from Processes.signaling_server import SignalingServer
+from Processes.signaling_server import signaling_server
 from Stats.stats import stats
 from Processes.tari_connector_sample import TariConnectorSample
 from Processes.template import Template
@@ -93,9 +93,9 @@ def cli_loop():
                     what = command.split()[1]
                     print(commands.grpc(what))
                 elif command.startswith("http"):
-                        url = f"http://{local_ip}:{webui_server.webui.http_port}"
-                        print(url)
-                        webbrowser.open(url)
+                    url = f"http://{local_ip}:{webui_server.webui.http_port}"
+                    print(url)
+                    webbrowser.open(url)
                 elif command.startswith("stop"):
                     what = command.split(maxsplit=1)[1]
                     id = "base_node"
@@ -149,7 +149,7 @@ def cli_loop():
                     dan_wallets.live()
                     indexers.live()
                 elif command == "tx":
-                    template.call_function(TEMPLATE_FUNCTION[0], dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS)
+                    template.call_function(TEMPLATE_FUNCTION[0], dan_wallets.any().jrpc_client, FUNCTION_ARGS)
                     pass
                 elif command.startswith("st"):
                     if command == "st":
@@ -229,15 +229,13 @@ def check_executable(bins_folder: str, file_name: str):
 
 server = None
 tari_connector_sample = None
-signaling_server = None
-signaling_server_jrpc_port = None
 webui_server = None
 commands = None
 
 try:
     if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE or DELETE_STDOUT_LOGS:
         if os.path.exists(DATA_FOLDER):
-            for file in os.listdir(DATA_FOLDER): 
+            for file in os.listdir(DATA_FOLDER):
                 full_path = os.path.join(os.getcwd(), DATA_FOLDER, file)
                 if os.path.isdir(full_path):
                     if DELETE_EVERYTHING_BUT_TEMPLATES_BEFORE:
@@ -274,15 +272,14 @@ try:
     server.run()
     if STEPS_RUN_SIGNALLING_SERVER:
         print_step("Starting signalling server")
-        signaling_server = SignalingServer(local_ip)
-        signaling_server_jrpc_port = signaling_server.json_rpc_port
+        signaling_server.start(local_ip)
 
     if STEPS_RUN_TARI_CONNECTOR_TEST_SITE:
         if not STEPS_RUN_SIGNALLING_SERVER:
             print("Starting tari-connector test without signaling server is pointless!")
         else:
             print_step("Starting tari-connector test website")
-            tari_connector_sample = TariConnectorSample(signaling_server_address=f"http://{local_ip}:{signaling_server.json_rpc_port}")
+            tari_connector_sample = TariConnectorSample(signaling_server_address=signaling_server.address)
 
     commands = Commands(tari_connector_sample, server, signaling_server)
 
@@ -307,18 +304,11 @@ try:
     if SPAWN_INDEXERS > 0:
         print_step("STARTING INDEXERS")
 
-        def spawn_indexer(id: int):
-            indexers.add_indexer(id)
-            time.sleep(1)
-            # force the indexer to connect to a VN. It will not find this substate, but it needs to contact the VN
-            # to start comms
-            # try:
-            #     indexers[id].jrpc_client.get_substate("component_d082c9cfb6507e302d5e252f43f4c008924648fc9bff18eaca5820a87808fc42", 0)
-            # except:
-            #     pass
+        def spawn_indexer():
+            indexers.add()
 
         for id in range(SPAWN_INDEXERS):
-            threads.add(spawn_indexer, (id,))
+            threads.add(spawn_indexer, ())
 
         threads.wait()
         indexers.wait_for_sync()
@@ -332,34 +322,27 @@ try:
 
     print_step("CREATING DAN WALLETS DAEMONS")
 
-    def create_wallet(dwallet_id: int, indexer_jrpc: int, signaling_server_jrpc: Optional[int]):
-        dan_wallets.add_dan_wallet_daemon(dwallet_id, indexer_jrpc, signaling_server_jrpc)
+    def create_wallet():
+        dan_wallets.add()
 
-    for dwallet_id in range(SPAWN_WALLETS):
+    for id in range(SPAWN_WALLETS):
         if SPAWN_INDEXERS > 0:
-            threads.add(
-                create_wallet,
-                (
-                    dwallet_id,
-                    indexers[dwallet_id % SPAWN_INDEXERS].json_rpc_port,
-                    signaling_server_jrpc_port,
-                ),
-            )
+            threads.add(create_wallet, ())
 
     threads.wait()
-    print(dan_wallets.dan_wallets.keys())
+    print(dan_wallets.items.keys())
     # Create a new key so we register all VNs to this public key and then create TestAccount_0 for it. So we can claim the fees.
     dan_wallets[0].jrpc_client.auth()
     new_key = dan_wallets[0].jrpc_client.keys_create()
     if not new_key:
         raise Exception("Failed to create a key")
-    claim_public_key : str = new_key["public_key"]
-    new_key_id : str = new_key["id"]
+    claim_public_key: str = new_key["public_key"]
+    new_key_id: str = new_key["id"]
 
     # Start VNs
     print_step("CREATING VNS")
     for vn_id in range(SPAWN_VNS):
-        validator_nodes.add_validator_node(vn_id)
+        validator_nodes.add()
     validator_nodes.wait_for_sync()
 
     print_step("REGISTER THE VNS")
@@ -387,7 +370,7 @@ try:
         # Publish template
         print_step("PUBLISHING TEMPLATE")
         for t in templates.values():
-            t.publish_template(validator_nodes.any_node().json_rpc_port, server.port, local_ip)
+            t.publish_template(validator_nodes.any().json_rpc_port, server.port, local_ip)
         miner.mine(4)
 
         # Wait for the VNs to pickup the blocks from base layer
@@ -403,12 +386,12 @@ try:
         def create_account(i: int, amount: int):
             name = {"Name": f"TestAccount_{i}"}
             dan_wallet_jrpc = dan_wallets[i % SPAWN_WALLETS].jrpc_client
-            print(f"Account {name["Name"]} creation started")
+            print(f"Account {name['Name']} creation started")
             if i == 0:
-                dan_wallet_jrpc.create_free_test_coins(name, amount, key_id = int(new_key_id))
+                dan_wallet_jrpc.create_free_test_coins(name, amount, key_id=int(new_key_id))
             else:
                 dan_wallet_jrpc.create_free_test_coins(name, amount)
-            print(f"Account {name["Name"]} created")
+            print(f"Account {name['Name']} created")
 
         threads.set_semaphore_limit(1)
         for i in range(CREATE_ACCOUNTS):
@@ -490,7 +473,7 @@ try:
             template = templates[template_name[0]]
             dump_into_account = "!" in template_name[1]
             method = template_name[1].replace("!", "")
-            template.call_function(method, dan_wallets.any_dan_wallet_daemon().jrpc_client, FUNCTION_ARGS, dump_into_account)
+            template.call_function(method, dan_wallets.any().jrpc_client, FUNCTION_ARGS, dump_into_account)
 
     if STRESS_TEST:
         stress_test()
