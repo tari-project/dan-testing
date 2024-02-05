@@ -44,7 +44,7 @@ class CommonExec:
         if not self.process or not self.is_running():
             return
         print(f"Kill {NAME_COLOR}{self.name}{COLOR_RESET}")
-        print(f"To run {EXEC_COLOR}{' '.join(self.exec).replace(" -n", "")}{COLOR_RESET}", end=" ")
+        print(f"To run {EXEC_COLOR}{' '.join(self.exec).replace(' -n', '')}{COLOR_RESET}", end=" ")
         if self.env:
             print(f"With env {EXEC_COLOR}{self.env}{COLOR_RESET}", end="")
         if sys.platform == "win32":
