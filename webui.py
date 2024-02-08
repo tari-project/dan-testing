@@ -163,6 +163,22 @@ class JrpcHandler(BaseHTTPRequestHandler):
             return InvalidParams()
 
         @method
+        def grpc(what: str) -> Result:  # type:ignore
+            jrpc_address = self.commands.grpc(what)
+            if jrpc_address:
+                return Success(jrpc_address)
+            return InvalidParams()
+
+        @method
+        def http(what: str) -> Result:  # type:ignore
+            print(what)
+            http_address = self.commands.http(what)
+            print(http_address)
+            if http_address:
+                return Success(http_address)
+            return InvalidParams()
+
+        @method
         def is_running(what: str) -> Result:  # type:ignore
             is_running = self.commands.is_running(what)
             return Success({"is_running": is_running})
