@@ -410,7 +410,7 @@ export default function Main() {
     get("indexers", setIndexers);
     get("base_nodes", setBaseNodes);
     get("base_wallets", setBaseWallets);
-    jsonRpc("http", ["TariConnector"])
+    jsonRpc("http", "TariConnector")
       .then((resp) => setConnectorSample(resp))
       .catch((error) => console.log(error));
     getLogs("miner");

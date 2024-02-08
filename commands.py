@@ -83,7 +83,7 @@ class Commands:
 
     def jrpc(self, what: str) -> Optional[str]:
         id = process_type.get_index(what)
-        if id:
+        if id is not None:
             if process_type.is_validator_node(what):
                 return self.validator_nodes.jrpc(id)
             if process_type.is_indexer(what):
@@ -96,7 +96,7 @@ class Commands:
 
     def http(self, what: str) -> Optional[str]:
         id = process_type.get_index(what)
-        if id:
+        if id is not None:
             if process_type.is_validator_node(what):
                 return self.validator_nodes.http(id)
             if process_type.is_indexer(what):
