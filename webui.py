@@ -8,6 +8,7 @@ from Processes.common_exec import CommonExec
 from Processes.subprocess_wrapper import SubprocessWrapper
 from Processes.template import Template
 from typing import Any, Optional
+import base64
 import cgi
 import os
 import subprocess
@@ -278,6 +279,15 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 data = file.read()
                 file.close()
                 return Success(data)
+            return InvalidParams("File not found")
+
+        @method
+        def get_file_binary(filename: str) -> Result:  # type:ignore
+            if os.path.exists(filename):
+                file = open(filename, "rb")
+                data = file.read()
+                file.close()
+                return Success(base64.b64encode(data).decode('utf-8'))
             return InvalidParams("File not found")
 
 
