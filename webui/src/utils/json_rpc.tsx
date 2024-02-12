@@ -21,30 +21,19 @@
 //  USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import { Mutex } from "async-mutex";
-import { json } from "react-router-dom";
 
-let token: String | null = null;
 let json_id = 0;
-const mutex_token = new Mutex();
 const mutex_id = new Mutex();
 
-export async function jsonRpc(method: string, ...args: any[]) {
+export async function jsonRpc(method: string, ...args: unknown[]) {
   let id;
   await mutex_id.runExclusive(() => {
     id = json_id;
     json_id += 1;
-  })
-  // let address = import.meta.env.VITE_DAEMON_JRPC_ADDRESS || "localhost:9000";
-  // try {
-  //   let text = await (await fetch("/json_rpc_address")).text();
-  //   if (/^\d+(\.\d+){3}:[0-9]+$/.test(text)) {
-  //     address = text;
-  //   }
-  // } catch {
-  // }
-  let address = import.meta.env.VITE_DAEMON_JRPC_ADDRESS || "localhost:9000";
-  let headers: { [key: string]: string } = { "Content-Type": "application/json" };
-  let response = await fetch(`http://${address}`, {
+  });
+  const address = import.meta.env.VITE_DAEMON_JRPC_ADDRESS || "localhost:9000";
+  const headers: { [key: string]: string } = { "Content-Type": "application/json" };
+  const response = await fetch(`http://${address}`, {
     method: "POST",
     body: JSON.stringify({
       method: method,
@@ -52,9 +41,9 @@ export async function jsonRpc(method: string, ...args: any[]) {
       id: id,
       params: [...args],
     }),
-    headers: headers
+    headers: headers,
   });
-  let json = await response.json();
+  const json = await response.json();
   if (json.error) {
     console.error(method);
     console.error(...args);
@@ -63,5 +52,3 @@ export async function jsonRpc(method: string, ...args: any[]) {
   }
   return json.result;
 }
-
-
