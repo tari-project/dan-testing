@@ -172,9 +172,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
 
         @method
         def http(what: str) -> Result:  # type:ignore
-            print(what)
             http_address = self.commands.http(what)
-            print(http_address)
             if http_address:
                 return Success(http_address)
             return InvalidParams()
@@ -188,6 +186,47 @@ class JrpcHandler(BaseHTTPRequestHandler):
         def burn(public_key: str, outfile: str, amount: int) -> Result:  # type:ignore
             self.commands.burn(public_key, outfile, amount)
             return Success()
+
+        @method
+        def get_dbs(what: Optional[str]) -> Result:  # type:ignore
+            try:
+                if what is None:
+                    dbs: list[tuple[str, str]] = []
+                    for path, _dirs, files in os.walk(DATA_FOLDER):
+                        for file in files:
+                            if file.endswith(".sqlite") or file.endswith(".db"):
+                                dbs.append((os.path.join(path, file), os.path.split(path)[1]))  # type:ignore
+                    return Success(dbs)
+                if process_type.is_miner(what):
+                    return Success(self.commands.miner.get_dbs())
+                if process_type.is_connector(what):
+                    if self.commands.tari_connector_sample:
+                        return Success(self.commands.tari_connector_sample.get_dbs())
+                    return Success("Not running")
+                if process_type.is_signaling_server(what):
+                    return Success(self.commands.signaling_server.get_dbs())
+                id = process_type.get_index(what)
+                if id is None:
+                    return InvalidParams()
+                if process_type.is_validator_node(what):
+                    if id in self.commands.validator_nodes:
+                        return Success(self.commands.validator_nodes[id].get_dbs())
+                if process_type.is_asset_wallet(what):
+                    if id in self.commands.dan_wallets:
+                        return Success(self.commands.dan_wallets[id].get_dbs())
+                if process_type.is_indexer(what):
+                    if id in self.commands.indexers:
+                        return Success(self.commands.indexers[id].get_dbs())
+                if process_type.is_base_node(what):
+                    if self.commands.base_nodes.has(id):
+                        return Success(self.commands.base_nodes[id].get_dbs())
+                if process_type.is_base_wallet(what):
+                    if self.commands.base_wallets.has(id):
+                        return Success(self.commands.base_wallets[id].get_dbs())
+                return InvalidParams()
+            except Exception as error:
+                Error(error)
+            return Error("Unknown")
 
         @method
         def get_logs(what: Optional[str]) -> Result:  # type:ignore
@@ -287,7 +326,7 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 file = open(filename, "rb")
                 data = file.read()
                 file.close()
-                return Success(base64.b64encode(data).decode('utf-8'))
+                return Success(base64.b64encode(data).decode("utf-8"))
             return InvalidParams("File not found")
 
 
