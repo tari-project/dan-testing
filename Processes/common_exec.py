@@ -79,5 +79,13 @@ class CommonExec:
                     logs.append((os.path.join(path, file), "stdout"))
         return logs
 
+    def get_dbs(self):
+        dbs: list[tuple[str, str]] = []
+        for path, _dirs, files in os.walk(os.path.join(DATA_FOLDER, self.name)):
+            for file in files:
+                if file.endswith(".sqlite") or file.endswith(".db"):
+                    dbs.append((os.path.join(path, file), self.name))
+        return dbs
+
 
 all_processes: dict[str, CommonExec] = {}
