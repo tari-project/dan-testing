@@ -45,6 +45,12 @@ class JrpcValidatorNode:
     def get_fees(self, min_epoch, max_epoch, validator_node):
         return self.call("get_fees", [[min_epoch, max_epoch], validator_node])
 
+    def get_template(self, address: list[int]):
+        return self.call("get_template", [address])
+
+    def get_templates(self, limit: int = 0):
+        return self.call("get_templates", [limit])
+
 
 class ValidatorNode(CommonExec):
     def __init__(self, base_node_grpc_port, wallet_grpc_port, node_id, peers=[]):

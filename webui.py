@@ -329,6 +329,14 @@ class JrpcHandler(BaseHTTPRequestHandler):
                 return Success(base64.b64encode(data).decode("utf-8"))
             return InvalidParams("File not found")
 
+        @method
+        def get_template(address: list[int]) -> Result:  # type:ignore
+            return Success(self.commands.validator_nodes.any().jrpc_client.get_template(address))
+
+        @method
+        def get_templates(limit: int) -> Result:  # type:ignore
+            return Success(self.commands.validator_nodes.any().jrpc_client.get_templates(limit))
+
 
 class WebuiServer(CommonExec):
     def __init__(self, jrpc_webui_server_address: str, local_ip: str):

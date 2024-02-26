@@ -98,27 +98,25 @@ def cli_loop():
                     webbrowser.open(url)
                 elif command.startswith("stop"):
                     what = command.split(maxsplit=1)[1]
-                    id = "base_node"
-                    if what == "node":
-                        if base_nodes.has(id):
-                            base_nodes[id].stop()
-                    elif what == "wallet":
-                        if base_wallets.has(id):
-                            base_wallets[id].stop()
+                    # This should be 'VN <id>'
+                    if r := re.match(r"vn (\d+)", what):
+                        vn_id = int(r.group(1))
+                        validator_nodes.stop(vn_id)
+                    elif r := re.match(r"dan (\d+)", what):
+                        dan_id = int(r.group(1))
+                        dan_wallets.stop(dan_id)
+                    elif r := re.match(r"indexer (\d+)", what):
+                        indexer_id = int(r.group(1))
+                        indexers.stop(indexer_id)
+                    elif r := re.match(r"wallet (\d+)", what):
+                        wallet_id = int(r.group(1))
+                        base_wallets.stop(wallet_id)
+                    elif r := re.match(r"node (\d+)", what):
+                        node_id = int(r.group(1))
+                        base_nodes.stop(node_id)
                     else:
-                        # This should be 'VN <id>'
-                        if r := re.match(r"vn (\d+)", what):
-                            vn_id = int(r.group(1))
-                            validator_nodes.stop(vn_id)
-                        elif r := re.match(r"dan (\d+)", what):
-                            dan_id = int(r.group(1))
-                            dan_wallets.stop(dan_id)
-                        elif r := re.match(r"indexer (\d+)", what):
-                            indexer_id = int(r.group(1))
-                            indexers.stop(indexer_id)
-                        else:
-                            print("Invalid stop command", command)
-                        # which = what.split()
+                        print("Invalid stop command", command)
+                    # which = what.split()
                 elif command.startswith("start"):
                     what = command.split(maxsplit=1)[1]
                     r = re.match(r"^(vn|indexer)(?: (\d+))?(?: ([a-zA-Z0-9]{64}))?$", what)
