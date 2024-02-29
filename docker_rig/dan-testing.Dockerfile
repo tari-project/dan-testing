@@ -238,7 +238,7 @@ RUN apt-get update && apt-get --no-install-recommends install -y \
       python3-grpc-tools \
       python3-psutil \
       python3-pip && \
-      pip install jsonrpcserver
+      pip3 install --break-system-packages jsonrpcserver
 
 RUN rustup target add wasm32-unknown-unknown
 
