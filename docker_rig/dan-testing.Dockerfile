@@ -1,13 +1,14 @@
 # syntax = docker/dockerfile:1.3
 
 # https://hub.docker.com/_/rust
-ARG RUST_VERSION=1.75
+ARG RUST_VERSION=1.76
+ARG RUST_DISTRO=bookworm
 
 # Node Version
 ARG NODE_MAJOR=20
 
 # rust source compile with cross platform build support
-FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-bullseye as builder-tari
+FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-$RUST_DISTRO as builder-tari
 
 # Declare to make available
 ARG BUILDPLATFORM
@@ -21,6 +22,7 @@ ARG TARGETVARIANT
 ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
+ARG RUST_DISTRO
 
 ARG DAN_TESTING_WEBUI_PORT
 
@@ -29,6 +31,7 @@ ARG NODE_MAJOR
 ENV NODE_MAJOR=$NODE_MAJOR
 
 # Prep nodejs lts - 20.x
+# https://github.com/nodesource/distributions
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
       ca-certificates \
@@ -100,7 +103,7 @@ RUN mkdir -p "/usr/local/lib/minotari/protos/" && \
       --grpc_python_out=/usr/local/lib/minotari/protos /tari/applications/minotari_app_grpc/proto/*.proto
 
 # rust source compile with cross platform build support
-FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-bullseye as builder-tari-dan
+FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-$RUST_DISTRO as builder-tari-dan
 
 # Declare to make available
 ARG BUILDPLATFORM
@@ -114,12 +117,14 @@ ARG TARGETVARIANT
 ARG RUST_TOOLCHAIN
 ARG RUST_TARGET
 ARG RUST_VERSION
+ARG RUST_DISTRO
 
 # Node Version
 ARG NODE_MAJOR
 ENV NODE_MAJOR=$NODE_MAJOR
 
 # Prep nodejs lts - 20.x
+# https://github.com/nodesource/distributions
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
       ca-certificates \
@@ -172,14 +177,10 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
     npm install react-scripts && \
     npm run build && \
     cd /tari-dan/ && \
-#    rustup toolchain install nightly --force-non-host && \
     rustup target add wasm32-unknown-unknown && \
-#    rustup target add wasm32-unknown-unknown --toolchain nightly && \
-#    rustup default nightly-2022-11-03 && \
     rustup target list --installed && \
     rustup toolchain list && \
     rustup show && \
-#    cargo +nightly build ${RUST_TARGET} \
     cargo build ${RUST_TARGET} \
       --release --locked \
       --bin tari_indexer \
@@ -198,7 +199,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
     echo "Tari Dan Build Done"
 
 # Create runtime base minimal image for the target platform executables
-FROM --platform=$TARGETPLATFORM rust:$RUST_VERSION-bullseye as runtime
+FROM --platform=$TARGETPLATFORM rust:$RUST_VERSION-$RUST_DISTRO as runtime
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -206,6 +207,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT
 ARG RUST_VERSION
+ARG RUST_DISTRO
 
 ARG VERSION
 
@@ -242,7 +244,6 @@ RUN rustup target add wasm32-unknown-unknown
 
 RUN rustup toolchain install nightly --force-non-host && \
     rustup target add wasm32-unknown-unknown --toolchain nightly
-#    rustup default nightly-2022-11-03
 
 # Debugging
 RUN rustup target list --installed && \
@@ -308,4 +309,3 @@ ENV TARI_DAN_BINS_FOLDER=/usr/local/bin/
 ENV USER=tari
 WORKDIR /home/tari/sources/dan-testing
 CMD [ "python3", "main.py" ]
-#CMD [ "tail", "-f", "/dev/null" ]
