@@ -248,7 +248,7 @@ try:
         print_step(f"Tari dan folder {TARI_DAN_BINS_FOLDER}")
         check_executable(TARI_BINS_FOLDER, "minotari_node")
         check_executable(TARI_BINS_FOLDER, "minotari_console_wallet")
-        check_executable(TARI_BINS_FOLDER, "minotari_miner")
+        check_executable(TARI_BINS_FOLDER, "minotari_sha")
         check_executable(TARI_DAN_BINS_FOLDER, "tari_indexer")
         check_executable(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_daemon")
         check_executable(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_cli")
