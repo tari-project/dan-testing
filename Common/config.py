@@ -58,20 +58,20 @@ print("SPAWN_WALLETS", SPAWN_WALLETS)
 CREATE_ACCOUNTS = int(get_env_or_default("DAN_TESTING_CREATE_ACCOUNTS", 2))
 print("CREATE_ACCOUNTS", CREATE_ACCOUNTS)
 # Any one of the templates from `wasm_template`
-TEMPLATES = get_env_or_default("DAN_TESTING_TEMPLATES", "fungible,swap")
+TEMPLATES = get_env_or_default("DAN_TESTING_TEMPLATES", "")
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
 # use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
 DEFAULT_TEMPLATE_FUNCTION = get_env_or_default(
     "DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION",
-    'fungible::mint=Amount(1000000),"token1"|fungible::mint=Amount(2000),"token2"',
+    ""
 )
 BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "false", is_boolstring))
 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
 STEPS_CREATE_ACCOUNT = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring))
-STEPS_CREATE_TEMPLATE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "true", is_boolstring))
+STEPS_CREATE_TEMPLATE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "false", is_boolstring))
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE", "true", is_boolstring))
 STEPS_RUN_SIGNALLING_SERVER = True
 LISTEN_ONLY_ON_LOCALHOST = True

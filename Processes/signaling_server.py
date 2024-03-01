@@ -17,7 +17,7 @@ class SignalingServer(CommonExec):
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_signaling_server")]
         else:
-            run = ["cargo", "run", "--bin", "tari_signaling_server", "--manifest-path", os.path.join("..", "tari-dan", "Cargo.toml"), "--"]
+            run = ["cargo", "run", "--release", "--bin", "tari_signaling_server", "--manifest-path", os.path.join("..", "tari-dan", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",

@@ -75,7 +75,7 @@ class BaseNode(CommonExec):
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_BINS_FOLDER, "minotari_node")]
         else:
-            run = ["cargo", "run", "--bin", "minotari_node", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
+            run = ["cargo", "run", "--release", "--bin", "minotari_node", "--manifest-path", os.path.join("..", "tari", "Cargo.toml"), "--"]
         self.exec = [
             *run,
             "-b",
