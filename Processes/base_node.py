@@ -43,7 +43,7 @@ class GrpcBaseNode:
         return self.stub.GetTipInfo(request)  # type:ignore
 
     def get_tip(self) -> int:
-        return self.get_tip_info().metadata.height_of_longest_chain
+        return self.get_tip_info().metadata.best_block_height
 
     def get_active_validator_nodes(self, height: int) -> base_node_pb2.GetActiveValidatorNodesResponse:
         request = base_node_pb2.GetActiveValidatorNodesRequest(height=height)
