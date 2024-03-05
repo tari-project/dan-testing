@@ -64,7 +64,7 @@ ARG VERSION=0.0.1
 
 RUN if [ "${BUILDARCH}" != "${TARGETARCH}" ] && [ "${ARCH}" = "native" ] ; then \
       echo "!! Cross-compile and native ARCH not a good idea !! " ; \
-    fi
+      fi
 
 WORKDIR /tari
 
@@ -76,28 +76,28 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
       # source /tari/cross-compile-aarch64.sh
       . /tari/cross-compile-aarch64.sh ; \
-    fi && \
-    if [ -n "${RUST_TOOLCHAIN}" ] ; then \
+      fi && \
+      if [ -n "${RUST_TOOLCHAIN}" ] ; then \
       # Install a non-standard toolchain if it has been requested.
       # By default we use the toolchain specified in rust-toolchain.toml
       rustup toolchain install ${RUST_TOOLCHAIN} --force-non-host ; \
-    fi && \
-    rustup target list --installed && \
-    rustup toolchain list && \
-    rustup show && \
-    cargo build ${RUST_TARGET} \
+      fi && \
+      rustup target list --installed && \
+      rustup toolchain list && \
+      rustup show && \
+      cargo build ${RUST_TARGET} \
       --release --features ${FEATURES} --locked \
       --bin minotari_node \
       --bin minotari_console_wallet \
       --bin minotari_miner && \
-    # Copy executable out of the cache so it is available in the runtime image.
-    cp -v /tari/target/${BUILD_TARGET}release/minotari_node /usr/local/bin/ && \
-    cp -v /tari/target/${BUILD_TARGET}release/minotari_console_wallet /usr/local/bin/ && \
-    cp -v /tari/target/${BUILD_TARGET}release/minotari_miner /usr/local/bin/minotari_sha && \
-    echo "Tari Build Done"
+      # Copy executable out of the cache so it is available in the runtime image.
+      cp -v /tari/target/${BUILD_TARGET}release/minotari_node /usr/local/bin/ && \
+      cp -v /tari/target/${BUILD_TARGET}release/minotari_console_wallet /usr/local/bin/ && \
+      cp -v /tari/target/${BUILD_TARGET}release/minotari_miner /usr/local/bin/minotari_sha && \
+      echo "Tari Build Done"
 
 RUN mkdir -p "/usr/local/lib/minotari/protos/" && \
-    python3 -m grpc_tools.protoc \
+      python3 -m grpc_tools.protoc \
       --proto_path /tari/applications/minotari_app_grpc/proto/ \
       --python_out=/usr/local/lib/minotari/protos \
       --grpc_python_out=/usr/local/lib/minotari/protos /tari/applications/minotari_app_grpc/proto/*.proto
@@ -152,7 +152,7 @@ ENV CARGO_HTTP_MULTIPLEXING=false
 
 RUN if [ "${BUILDARCH}" != "${TARGETARCH}" ] && [ "${ARCH}" = "native" ] ; then \
       echo "!! Cross-compile and native ARCH not a good idea !! " ; \
-    fi
+      fi
 
 WORKDIR /tari-dan
 
@@ -164,24 +164,24 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
       # Hardcoded ARM64 envs for cross-compiling - FixMe soon
       # source /tari-dan/cross-compile-aarch64.sh
       . /tari-dan/cross-compile-aarch64.sh ; \
-    fi && \
-    if [ -n "${RUST_TOOLCHAIN}" ] ; then \
+      fi && \
+      if [ -n "${RUST_TOOLCHAIN}" ] ; then \
       # Install a non-standard toolchain if it has been requested.
       # By default we use the toolchain specified in rust-toolchain.toml
       rustup toolchain install ${RUST_TOOLCHAIN} --force-non-host ; \
-    fi && \
-    cd /tari-dan/applications/tari_indexer_web_ui && \
-    npm install react-scripts && \
-    npm run build && \
-    cd /tari-dan/applications/tari_validator_node_web_ui && \
-    npm install react-scripts && \
-    npm run build && \
-    cd /tari-dan/ && \
-    rustup target add wasm32-unknown-unknown && \
-    rustup target list --installed && \
-    rustup toolchain list && \
-    rustup show && \
-    cargo build ${RUST_TARGET} \
+      fi && \
+      cd /tari-dan/applications/tari_indexer_web_ui && \
+      npm install react-scripts && \
+      npm run build && \
+      cd /tari-dan/applications/tari_validator_node_web_ui && \
+      npm install react-scripts && \
+      npm run build && \
+      cd /tari-dan/ && \
+      rustup target add wasm32-unknown-unknown && \
+      rustup target list --installed && \
+      rustup toolchain list && \
+      rustup show && \
+      cargo build ${RUST_TARGET} \
       --release --locked \
       --bin tari_indexer \
       --bin tari_dan_wallet_daemon \
@@ -189,14 +189,14 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "${TARGETARCH}" ] ; 
       --bin tari_signaling_server \
       --bin tari_validator_node \
       --bin tari_validator_node_cli && \
-    # Copy executable out of the cache so it is available in the runtime image.
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_indexer /usr/local/bin/ && \
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_dan_wallet_daemon /usr/local/bin/ && \
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_dan_wallet_cli /usr/local/bin/ && \
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_signaling_server /usr/local/bin/ && \
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_validator_node /usr/local/bin/ && \
-    cp -v /tari-dan/target/${BUILD_TARGET}release/tari_validator_node_cli /usr/local/bin/ && \
-    echo "Tari Dan Build Done"
+      # Copy executable out of the cache so it is available in the runtime image.
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_indexer /usr/local/bin/ && \
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_dan_wallet_daemon /usr/local/bin/ && \
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_dan_wallet_cli /usr/local/bin/ && \
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_signaling_server /usr/local/bin/ && \
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_validator_node /usr/local/bin/ && \
+      cp -v /tari-dan/target/${BUILD_TARGET}release/tari_validator_node_cli /usr/local/bin/ && \
+      echo "Tari Dan Build Done"
 
 # Create runtime base minimal image for the target platform executables
 FROM --platform=$TARGETPLATFORM rust:$RUST_VERSION-$RUST_DISTRO as runtime
@@ -243,15 +243,15 @@ RUN apt-get update && apt-get --no-install-recommends install -y \
 RUN rustup target add wasm32-unknown-unknown
 
 RUN rustup toolchain install nightly --force-non-host && \
-    rustup target add wasm32-unknown-unknown --toolchain nightly
+      rustup target add wasm32-unknown-unknown --toolchain nightly
 
 # Debugging
 RUN rustup target list --installed && \
-    rustup toolchain list && \
-    rustup show
+      rustup toolchain list && \
+      rustup show
 
 RUN groupadd --gid 1000 tari && \
-    useradd --create-home --no-log-init --shell /bin/bash \
+      useradd --create-home --no-log-init --shell /bin/bash \
       --home-dir /home/tari \
       --uid 1000 --gid 1000 tari
 
@@ -262,23 +262,23 @@ ENV rust_version=$RUST_VERSION
 
 # Setup some folder structure
 RUN mkdir -p "/home/tari/sources/tari-connector" && \
-    mkdir -p "/home/tari/sources/dan-testing/Data" && \
-    mkdir -p "/home/tari/sources/tari" && \
-    mkdir -p "/home/tari/sources/tari-dan" && \
-    mkdir -p "/home/tari/data" && \
-    chown -R tari:tari "/home/tari/" && \
-    mkdir -p "/usr/local/lib/tari/protos" && \
-    ln -vsf "/home/tari/sources/tari-connector/" "/usr/lib/node_modules/tari-connector" && \
-    mkdir -p "/usr/local/lib/node_modules" && \
-    chown -R tari:tari "/usr/local/lib/node_modules"
+      mkdir -p "/home/tari/sources/dan-testing/Data" && \
+      mkdir -p "/home/tari/sources/tari" && \
+      mkdir -p "/home/tari/sources/tari-dan" && \
+      mkdir -p "/home/tari/data" && \
+      chown -R tari:tari "/home/tari/" && \
+      mkdir -p "/usr/local/lib/tari/protos" && \
+      ln -vsf "/home/tari/sources/tari-connector/" "/usr/lib/node_modules/tari-connector" && \
+      mkdir -p "/usr/local/lib/node_modules" && \
+      chown -R tari:tari "/usr/local/lib/node_modules"
 
 USER tari
 WORKDIR /home/tari
 
 # Debugging
 RUN rustup target list --installed && \
-    rustup toolchain list && \
-    rustup show
+      rustup toolchain list && \
+      rustup show
 
 # Move into python due to Cross-compile arm64 on amd64 issue
 #RUN cargo install cargo-generate
@@ -307,5 +307,6 @@ ENV DAN_TESTING_DATA_FOLDER=/home/tari/data
 ENV TARI_BINS_FOLDER=/usr/local/bin/
 ENV TARI_DAN_BINS_FOLDER=/usr/local/bin/
 ENV USER=tari
+EXPOSE 18000 18001 18002 18003 18004 18005 18006 18007 18008 18009 18010 18011 18012 18013 18014 18015 18016 18017 18018 18019 18020 18021 18022 18023 18024 18025 
 WORKDIR /home/tari/sources/dan-testing
 CMD [ "python3", "main.py" ]
