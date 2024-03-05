@@ -13,7 +13,7 @@ import cgi
 import os
 import subprocess
 import threading
-import webbrowser
+# import webbrowser
 import process_type
 
 
@@ -355,8 +355,8 @@ class WebuiServer(CommonExec):
         self.exec = ["npm", "--prefix", "webui", "run", "dev", "--", "--port", str(self.http_port), "--host", "0.0.0.0"]
         self.env["VITE_DAEMON_JRPC_ADDRESS"] = jrpc_webui_server_address
         self.run()
-        if WEBUI_PORT == "auto":
-            webbrowser.open(f"http://{local_ip}:{self.http_port}")
+        # if WEBUI_PORT == "auto":
+            # webbrowser.open(f"http://{local_ip}:{self.http_port}")
 
 
 class JrpcWebuiServer:
