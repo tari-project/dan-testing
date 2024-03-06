@@ -157,10 +157,10 @@ class DanWalletDaemon(CommonExec):
         super().__init__("AssetWallet", dan_wallet_id)
         self.json_rpc_port = super().get_port("JRPC")
         self.json_connect_address = f"{local_ip}:{self.json_rpc_port}"
-        self.json_listen_address = f"127.0.0.1:{self.json_rpc_port}"
+        self.json_listen_address = f"0.0.0.0:{self.json_rpc_port}"
         self.http_port = self.get_port("HTTP")
         self.http_connect_address = f"{local_ip}:{self.http_port}"
-        self.http_listen_address = f"127.0.0.1:{self.http_port}"
+        self.http_listen_address = f"0.0.0.0:{self.http_port}"
         if USE_BINARY_EXECUTABLE:
             run = [os.path.join(TARI_DAN_BINS_FOLDER, "tari_dan_wallet_daemon")]
         else:
