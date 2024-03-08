@@ -33,6 +33,10 @@ def is_connector(what: str) -> bool:
     return what.startswith("TariConnector")
 
 
+def is_template_web(what: str) -> bool:
+    return what.startswith("TemplateWeb")
+
+
 def get_index(what: str) -> Optional[int]:
     try:
         _, id = what.split("_")

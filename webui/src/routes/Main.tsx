@@ -9,6 +9,7 @@ enum Executable {
   Indexer = 5,
   DanWallet = 6,
   Templates = 7,
+  TemplateWeb = 8,
 }
 
 async function jsonRpc2(address: string, method: string, params: any = null) {
@@ -378,6 +379,7 @@ export default function Main() {
   const [logs, setLogs] = useState({});
   const [stdoutLogs, setStdoutLogs] = useState({});
   const [connectorSample, setConnectorSample] = useState(null);
+  const [templateWeb, setTemplateWeb] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showLogs, setShowLogs] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -412,6 +414,9 @@ export default function Main() {
     get("base_wallets", setBaseWallets);
     jsonRpc("http", "TariConnector")
       .then((resp) => setConnectorSample(resp))
+      .catch((error) => console.log(error));
+    jsonRpc("http", "TemplateWeb")
+      .then((resp) => setTemplateWeb(resp))
       .catch((error) => console.log(error));
     getLogs("miner");
     getStdout("miner");
@@ -513,7 +518,15 @@ export default function Main() {
           <input type="file" onChange={handleFileChange} />
           <button onClick={handleFileUpload}>Upload template</button>
         </ShowInfo>
+        {templateWeb && (
+          <ShowInfo executable={Executable.TemplateWeb} horizontal={horizontal}>
+            <div id="templates">
+              <a href={templateWeb}>Template web</a>
+            </div>
+          </ShowInfo>
+        )}
       </div>
+
       {connectorSample && (
         <div className="label">
           <a href={connectorSample}>Connector sample</a>

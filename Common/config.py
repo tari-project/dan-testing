@@ -42,6 +42,7 @@ def get_env_or_default(env_name: str, default: Any, validation: Any = None) -> A
 
 
 WEBUI_PORT = get_env_or_default("DAN_TESTING_WEBUI_PORT", "auto")
+TEMPLATE_WEB_PORT = get_env_or_default("DAN_TESTING_TEMPLATE_WEB_PORT", "auto")
 DATA_FOLDER = get_env_or_default("DAN_TESTING_DATA_FOLDER", "Data")
 TARI_BINS_FOLDER = get_env_or_default("TARI_BINS_FOLDER", "bins")
 TARI_DAN_BINS_FOLDER = get_env_or_default("TARI_DAN_BINS_FOLDER", "bins")
@@ -62,10 +63,7 @@ TEMPLATES = get_env_or_default("DAN_TESTING_TEMPLATES", "")
 # Specify args e.g. mint=10000,10001,1. Start the value with "w:" to choose Workspace arg, specify multiples with | e.g. fungible::mint=w:0|fungible::mint=10000,10001,1
 # use ! to dump the buckets into the account
 # DEFAULT_TEMPLATE_FUNCTION = "mint"
-DEFAULT_TEMPLATE_FUNCTION = get_env_or_default(
-    "DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION",
-    ""
-)
+DEFAULT_TEMPLATE_FUNCTION = get_env_or_default("DAN_TESTING_DEFAULT_TEMPLATE_FUNCTION", "")
 BURN_AMOUNT = int(get_env_or_default("DAN_TESTING_BURN_AMOUNT", 1000000))
 NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "false", is_boolstring))
 

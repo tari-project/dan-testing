@@ -10,6 +10,7 @@ from Collections.indexers import indexers
 from Collections.dan_wallet_daemons import dan_wallets
 from Collections.base_nodes import base_nodes
 from Common.local_ip import local_ip
+from template_web import TemplateWebServer
 import os
 import base64
 import json
@@ -20,11 +21,13 @@ class Commands:
     def __init__(
         self,
         tari_connector_sample: Optional[TariConnectorSample],
+        template_web_server: Optional[TemplateWebServer],
         server: Server,
         signaling_server: SignalingServer,
     ) -> None:
         self.miner = miner
         self.tari_connector_sample = tari_connector_sample
+        self.template_web_server = template_web_server
         self.server = server
         self.signaling_server = signaling_server
         self.indexers = indexers
@@ -106,4 +109,7 @@ class Commands:
         if process_type.is_connector(what):
             if self.tari_connector_sample:
                 return f"http://{local_ip}:{self.tari_connector_sample.http_port}"
+        if process_type.is_template_web(what):
+            if self.template_web_server:
+                return f"http://{local_ip}:{self.template_web_server.http_port}"
         return None
