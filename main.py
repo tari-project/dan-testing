@@ -34,6 +34,7 @@ from Common.threads import threads
 from Common.local_ip import local_ip
 from commands import Commands
 from webui import JrpcWebuiServer
+from template_web import TemplateWebServer
 import os
 import re
 import shutil
@@ -45,8 +46,7 @@ from Collections.base_wallets import base_wallets
 from Collections.validator_nodes import validator_nodes
 from Collections.indexers import indexers
 from Collections.dan_wallet_daemons import dan_wallets
-from typing import Any, Optional
-import signal
+from typing import Any
 
 accounts: dict[str, Any] = {}
 
@@ -228,6 +228,7 @@ def check_executable(bins_folder: str, file_name: str):
 server = None
 tari_connector_sample = None
 webui_server = None
+template_web_server = None
 commands = None
 
 try:
@@ -279,9 +280,12 @@ try:
             print_step("Starting tari-connector test website")
             tari_connector_sample = TariConnectorSample(signaling_server_address=signaling_server.address)
 
-    commands = Commands(tari_connector_sample, server, signaling_server)
+    if signaling_server.address:
+        template_web_server = TemplateWebServer(signaling_server.address)
 
+    commands = Commands(tari_connector_sample, template_web_server, server, signaling_server)
     webui_server = JrpcWebuiServer(commands)
+
     templates: dict[str, Template] = {}
     if STEPS_CREATE_TEMPLATE:
         print_step("GENERATING TEMPLATE")
@@ -484,6 +488,7 @@ except KeyboardInterrupt:
     print("ctrl-c pressed during setup")
 
 del webui_server
+del template_web_server
 del commands
 del tari_connector_sample
 del signaling_server
