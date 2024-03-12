@@ -23,7 +23,7 @@ class SignalingServer(CommonExec):
             "-b",
             os.path.join(DATA_FOLDER, "signaling_server"),
             "--listen-addr",
-            f"{local_ip}:{self.json_rpc_port}",
+            f"0.0.0.0:{self.json_rpc_port}",
         ]
         self.run()
         print("Waiting for signaling server to start.", end="")
