@@ -62,6 +62,8 @@ class Indexer(CommonExec):
             f"indexer.http_ui_address={self.http_listen_address}",
             "-p",
             f"indexer.ui_connect_address=http://{self.json_connect_address}",
+            "-p",
+            "indexer.base_layer_scanning_interval=1",
         ]
         self.run()
 

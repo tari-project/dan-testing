@@ -89,6 +89,8 @@ class ValidatorNode(CommonExec):
             f"validator_node.no_fees={NO_FEES}",
             "--json-rpc-public-address",
             f"http://{self.json_connect_address}",
+            "-p",
+            "validator_node.base_layer_scanning_interval=1",
         ]
         self.run()
 
