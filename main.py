@@ -1,6 +1,7 @@
 # pyright: reportUnboundVariable=false
 
 from Common.config import (
+    NONINTERACTIVE,
     TARI_BINS_FOLDER,
     TARI_DAN_BINS_FOLDER,
     BURN_AMOUNT,
@@ -480,7 +481,12 @@ try:
     if STRESS_TEST:
         stress_test()
     print(stats)
-    cli_loop()
+    if not NONINTERACTIVE:
+      cli_loop()
+    else:
+        print("Non-interactive mode")
+        while True:
+            time.sleep(10)  
 except Exception as ex:
     print("Failed setup:", ex)
     traceback.print_exc()

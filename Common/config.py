@@ -70,6 +70,7 @@ NO_FEES = is_boolstring_true(get_env_or_default("DAN_TESTING_NO_FEES", "false", 
 USE_BINARY_EXECUTABLE = "DAN_TESTING_USE_BINARY_EXECUTABLE" in os.environ
 STEPS_CREATE_ACCOUNT = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_ACCOUNT", "true", is_boolstring))
 STEPS_CREATE_TEMPLATE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_CREATE_TEMPLATE", "false", is_boolstring))
+NONINTERACTIVE = is_boolstring_true(get_env_or_default("DAN_TESTING_NONINTERACTIVE", "false", is_boolstring))
 STEPS_RUN_TARI_CONNECTOR_TEST_SITE = is_boolstring_true(get_env_or_default("DAN_TESTING_STEPS_RUN_TARI_CONNECTOR_TEST_SITE", "true", is_boolstring))
 STEPS_RUN_SIGNALLING_SERVER = True
 LISTEN_ONLY_ON_LOCALHOST = True
