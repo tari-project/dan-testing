@@ -487,7 +487,7 @@ except Exception as ex:
 except KeyboardInterrupt:
     print("ctrl-c pressed during setup")
 
-del webui_server
+# del webui_server
 del template_web_server
 del commands
 del tari_connector_sample
